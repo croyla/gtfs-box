@@ -213,6 +213,31 @@
 		window.mapboxgl = window.maplibregl;
 		window.mapboxgl.accessToken = 'pk.maplibre';
 		console.log('[INIT] All patches applied, mapboxgl is ready for MT3D');
+
+	// NUCLEAR OPTION: Patch Map.prototype.on to inject getOwnLayer
+	(function() {
+		console.log('[NUCLEAR] Installing Map.prototype.on wrapper');
+		const OriginalMapOn = maplibregl.Map.prototype.on;
+
+		maplibregl.Map.prototype.on = function(type, ...args) {
+			const result = OriginalMapOn.apply(this, args);
+
+			if ((type === 'load' || type === 'styledata') && this.style && !this.style._getOwnLayerAdded) {
+				console.log('[NUCLEAR] Adding getOwnLayer to style on', type);
+				this.style.getOwnLayer = function(id) {
+					console.log('[NUCLEAR] getOwnLayer called for:', id);
+					if (this._layers && this._layers[id]) {
+						const layer = this._layers[id];
+						if (!layer.metadata) layer.metadata = {};
+						return layer;
+					}
+					return { id: id, metadata: {} };
+				};
+				this.style._getOwnLayerAdded = true;
+			}
+			return result;
+		};
+	})();
 	</script>
 	<script src="mini-tokyo-3d.min.js"></script>
 	<!-- <script src="mt3d-plugin-precipitation.min.js"></script> -->

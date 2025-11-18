@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Nuclear Patch Test</title>
+	<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+	<script>
+		console.log('[TEST] Applying nuclear patch to Map.prototype.on');
+
+		const OriginalOn = maplibregl.Map.prototype.on;
+
+		maplibregl.Map.prototype.on = function(type, ...args) {
+			console.log('[NUCLEAR] Map.on called with type:', type);
+			const result = OriginalOn.apply(this, args);
+
+			if ((type === 'load' || type === 'styledata') && this.style) {
+				console.log('[NUCLEAR] Style exists, checking for getOwnLayer');
+				if (!this.style.getOwnLayer) {
+					console.log('[NUCLEAR] Creating getOwnLayer!');
+					this.style.getOwnLayer = function(id) {
+						console.log('[NUCLEAR] getOwnLayer called for:', id);
+						if (this._layers && this._layers[id]) {
+							const layer = this._layers[id];
+							if (!layer.metadata) layer.metadata = {};
+							return layer;
+						}
+						console.log('[NUCLEAR] Returning proxy for:', id);
+						return { id: id, metadata: {} };
+					};
+				}
+			}
+
+			return result;
+		};
+
+		console.log('[TEST] Patch applied');
+
+		window.mapboxgl = window.maplibregl;
+		window.mapboxgl.accessToken = 'test';
+	</script>
+	<script src="mini-tokyo-3d.min.js"></script>
+	<script src="mt3d-plugin-plateau.min.js"></script>
+	<div id="map" style="width: 100%; height: 600px"></div>
+	<script src="gtfs-box.js"></script>
+</head>
+<body>
+	<h1>Testing nuclear patch</h1>
+</body>
+</html>
