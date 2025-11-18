@@ -5,7 +5,7 @@ const SOURCES = [
     vehiclePositionUrl: 'https://backend.bengawalk.com/kia/gtfs-rt.proto',
     color: '00C8FF',
     zoom: 10,
-    center: [12.95, 77.61],
+    center: [77.61, 12.95],
     bearing: 0,
     pitch: 60
     },
