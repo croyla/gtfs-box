@@ -73,6 +73,26 @@
         console.log('Canvas client size:', canvas.clientWidth, 'x', canvas.clientHeight);
         console.log('Canvas style:', canvas.style.width, 'x', canvas.style.height);
 
+        // Check WebGL context
+        const gl = canvas.getContext('webgl') || canvas.getContext('webgl2') || canvas.getContext('experimental-webgl');
+        console.log('WebGL context:', gl);
+        if (gl) {
+            console.log('WebGL vendor:', gl.getParameter(gl.VENDOR));
+            console.log('WebGL renderer:', gl.getParameter(gl.RENDERER));
+            console.log('WebGL version:', gl.getParameter(gl.VERSION));
+        } else {
+            console.error('❌ NO WEBGL CONTEXT!');
+        }
+
+        // Check if MapLibre is rendering
+        console.log('Map render frame callback:', map._renderFrameCallback);
+        console.log('Map loaded:', map._loaded);
+        console.log('Map style loaded:', map.style ? map.style.loaded() : 'no style');
+
+        // Force a repaint
+        console.log('Forcing map repaint...');
+        map.triggerRepaint();
+
         // Check if tiles are loaded
         const source = map.getSource('openmaptiles');
         console.log('OpenMapTiles source:', source);
