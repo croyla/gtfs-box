@@ -29,6 +29,28 @@
 	<meta name="twitter:site" content="@nagix" />
 	<!-- Load MapLibre GL JS - Now natively supported by Mini Tokyo 3D! -->
 	<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+	<script>
+		// Intercept Mapbox API calls to prevent 403 errors
+		const originalFetch = window.fetch;
+		window.fetch = function(url, options) {
+			// Mock Mapbox tilequery API for timezone data
+			if (typeof url === 'string' && url.includes('api.mapbox.com/v4/') && url.includes('/tilequery/')) {
+				console.log('[MAPBOX INTERCEPT] Returning mock timezone data for:', url);
+				return Promise.resolve(new Response(JSON.stringify({
+					type: 'FeatureCollection',
+					features: [{
+						properties: {
+							TZID: 'UTC'
+						}
+					}]
+				}), {
+					status: 200,
+					headers: { 'Content-Type': 'application/json' }
+				}));
+			}
+			return originalFetch.apply(this, arguments);
+		};
+	</script>
 	<script src="mini-tokyo-3d.min.js"></script>
 	<script src="mt3d-plugin-plateau.min.js"></script>
 </head>
