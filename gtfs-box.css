@@ -40,6 +40,9 @@ body {
     overflow: hidden;
     transition: height 300ms;
 }
+.config-container.expanded {
+    height: 160px;
+}
 .config {
     position: absolute;
     bottom: 0;
