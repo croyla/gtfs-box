@@ -22,6 +22,11 @@
       "type": "background",
       "paint": {
         "background-color": "#f8f4f0"
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-underground": 0
       }
     },
     {
@@ -55,6 +60,13 @@
         "fill-color": "#d8e8c8",
         "fill-opacity": 0.7,
         "fill-outline-color": "rgba(95, 208, 100, 1)"
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-route": 0.1,
+        "mt3d:opacity-underground": 0.0625,
+        "mt3d:opacity-underground-route": 0.025
       }
     },
     {
@@ -68,6 +80,13 @@
           1,
           1.5
         ]
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-route": 0.1,
+        "mt3d:opacity-underground": 0.0625,
+        "mt3d:opacity-underground-route": 0.025
       }
     },
     {
@@ -98,6 +117,13 @@
           12,
           "hsla(35,57%,88%,0.49)"
         ]
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-route": 0.1,
+        "mt3d:opacity-underground": 0.0625,
+        "mt3d:opacity-underground-route": 0.025
       }
     },
     {
@@ -117,6 +143,13 @@
         "fill-antialias": false,
         "fill-color": "hsla(98,61%,72%,0.7)",
         "fill-opacity": 0.4
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-route": 0.1,
+        "mt3d:opacity-underground": 0.0625,
+        "mt3d:opacity-underground-route": 0.025
       }
     },
     {
@@ -136,6 +169,13 @@
         "fill-antialias": false,
         "fill-color": "rgba(176, 213, 154, 1)",
         "fill-opacity": 0.3
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-route": 0.1,
+        "mt3d:opacity-underground": 0.0625,
+        "mt3d:opacity-underground-route": 0.025
       }
     },
     {
@@ -227,6 +267,13 @@
       ],
       "paint": {
         "fill-color": "hsl(75,37%,81%)"
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-route": 0.1,
+        "mt3d:opacity-underground": 0.0625,
+        "mt3d:opacity-underground-route": 0.025
       }
     },
     {
@@ -244,6 +291,13 @@
       ],
       "paint": {
         "fill-color": "#fde"
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-route": 0.1,
+        "mt3d:opacity-underground": 0.0625,
+        "mt3d:opacity-underground-route": 0.025
       }
     },
     {
@@ -261,6 +315,13 @@
       ],
       "paint": {
         "fill-color": "rgb(236,238,204)"
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-route": 0.1,
+        "mt3d:opacity-underground": 0.0625,
+        "mt3d:opacity-underground-route": 0.025
       }
     },
     {
@@ -355,6 +416,13 @@
           20,
           6
         ]
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-route": 0.1,
+        "mt3d:opacity-underground": 0.0625,
+        "mt3d:opacity-underground-route": 0.025
       }
     },
     {
@@ -400,6 +468,13 @@
           20,
           6
         ]
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-route": 0.1,
+        "mt3d:opacity-underground": 0.0625,
+        "mt3d:opacity-underground-route": 0.025
       }
     },
     {
@@ -417,6 +492,13 @@
       ],
       "paint": {
         "fill-color": "rgb(158,189,255)"
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-route": 0.1,
+        "mt3d:opacity-underground": 0.0625,
+        "mt3d:opacity-underground-route": 0.025
       }
     },
     {
@@ -457,6 +539,13 @@
       "paint": {
         "fill-color": "rgba(229, 228, 224, 1)",
         "fill-opacity": 0.7
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-route": 0.1,
+        "mt3d:opacity-underground": 0.0625,
+        "mt3d:opacity-underground-route": 0.025
       }
     },
     {
@@ -504,6 +593,13 @@
           20,
           16
         ]
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-route": 0.1,
+        "mt3d:opacity-underground": 0.0625,
+        "mt3d:opacity-underground-route": 0.025
       }
     },
     {
@@ -551,6 +647,13 @@
           20,
           6
         ]
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-route": 0.1,
+        "mt3d:opacity-underground": 0.0625,
+        "mt3d:opacity-underground-route": 0.025
       }
     },
     {
@@ -612,6 +715,13 @@
           20,
           15
         ]
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-route": 0.1,
+        "mt3d:opacity-underground": 0.0625,
+        "mt3d:opacity-underground-route": 0.025
       }
     },
     {
@@ -668,6 +778,13 @@
           20,
           11
         ]
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-route": 0.1,
+        "mt3d:opacity-underground": 0.0625,
+        "mt3d:opacity-underground-route": 0.025
       }
     },
     {
@@ -717,6 +834,13 @@
           20,
           15
         ]
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-route": 0.1,
+        "mt3d:opacity-underground": 0.0625,
+        "mt3d:opacity-underground-route": 0.025
       }
     },
     {
@@ -784,6 +908,13 @@
           20,
           15
         ]
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-route": 0.1,
+        "mt3d:opacity-underground": 0.0625,
+        "mt3d:opacity-underground-route": 0.025
       }
     },
     {
@@ -834,6 +965,13 @@
           20,
           17
         ]
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-route": 0.1,
+        "mt3d:opacity-underground": 0.0625,
+        "mt3d:opacity-underground-route": 0.025
       }
     },
     {
@@ -888,6 +1026,13 @@
           20,
           22
         ]
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-route": 0.1,
+        "mt3d:opacity-underground": 0.0625,
+        "mt3d:opacity-underground-route": 0.025
       }
     },
     {
@@ -949,6 +1094,13 @@
           20,
           22
         ]
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-route": 0.1,
+        "mt3d:opacity-underground": 0.0625,
+        "mt3d:opacity-underground-route": 0.025
       }
     },
     {
@@ -1012,6 +1164,13 @@
           20,
           10
         ]
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-route": 0.1,
+        "mt3d:opacity-underground": 0.0625,
+        "mt3d:opacity-underground-route": 0.025
       }
     },
     {
@@ -1069,6 +1228,13 @@
           20,
           11.5
         ]
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-route": 0.1,
+        "mt3d:opacity-underground": 0.0625,
+        "mt3d:opacity-underground-route": 0.025
       }
     },
     {
@@ -1121,6 +1287,13 @@
           20,
           7.5
         ]
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-route": 0.1,
+        "mt3d:opacity-underground": 0.0625,
+        "mt3d:opacity-underground-route": 0.025
       }
     },
     {
@@ -1170,6 +1343,13 @@
           20,
           11.5
         ]
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-route": 0.1,
+        "mt3d:opacity-underground": 0.0625,
+        "mt3d:opacity-underground-route": 0.025
       }
     },
     {
@@ -1221,6 +1401,13 @@
           20,
           11.5
         ]
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-route": 0.1,
+        "mt3d:opacity-underground": 0.0625,
+        "mt3d:opacity-underground-route": 0.025
       }
     },
     {
@@ -1273,6 +1460,13 @@
           20,
           10
         ]
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-route": 0.1,
+        "mt3d:opacity-underground": 0.0625,
+        "mt3d:opacity-underground-route": 0.025
       }
     },
     {
@@ -1325,6 +1519,13 @@
           20,
           18
         ]
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-route": 0.1,
+        "mt3d:opacity-underground": 0.0625,
+        "mt3d:opacity-underground-route": 0.025
       }
     },
     {
@@ -1380,6 +1581,13 @@
           20,
           18
         ]
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-route": 0.1,
+        "mt3d:opacity-underground": 0.0625,
+        "mt3d:opacity-underground-route": 0.025
       }
     },
     {
@@ -1428,6 +1636,13 @@
           20,
           2
         ]
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-route": 0.1,
+        "mt3d:opacity-underground": 0.0625,
+        "mt3d:opacity-underground-route": 0.025
       }
     },
     {
@@ -1476,6 +1691,13 @@
           20,
           8
         ]
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-route": 0.1,
+        "mt3d:opacity-underground": 0.0625,
+        "mt3d:opacity-underground-route": 0.025
       }
     },
     {
@@ -1524,6 +1746,13 @@
           20,
           2
         ]
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-route": 0.1,
+        "mt3d:opacity-underground": 0.0625,
+        "mt3d:opacity-underground-route": 0.025
       }
     },
     {
@@ -1572,6 +1801,13 @@
           20,
           8
         ]
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-route": 0.1,
+        "mt3d:opacity-underground": 0.0625,
+        "mt3d:opacity-underground-route": 0.025
       }
     },
     {
@@ -1593,6 +1829,13 @@
       ],
       "paint": {
         "fill-pattern": "pedestrian_polygon"
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-route": 0.1,
+        "mt3d:opacity-underground": 0.0625,
+        "mt3d:opacity-underground-route": 0.025
       }
     },
     {
@@ -1657,6 +1900,13 @@
           20,
           15
         ]
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-route": 0.1,
+        "mt3d:opacity-underground": 0.0625,
+        "mt3d:opacity-underground-route": 0.025
       }
     },
     {
@@ -1715,6 +1965,13 @@
           20,
           11
         ]
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-route": 0.1,
+        "mt3d:opacity-underground": 0.0625,
+        "mt3d:opacity-underground-route": 0.025
       }
     },
     {
@@ -1787,6 +2044,13 @@
           20,
           15
         ]
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-route": 0.1,
+        "mt3d:opacity-underground": 0.0625,
+        "mt3d:opacity-underground-route": 0.025
       }
     },
     {
@@ -1879,6 +2143,13 @@
           20,
           20
         ]
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-route": 0.1,
+        "mt3d:opacity-underground": 0.0625,
+        "mt3d:opacity-underground-route": 0.025
       }
     },
     {
@@ -1943,6 +2214,13 @@
           20,
           17
         ]
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-route": 0.1,
+        "mt3d:opacity-underground": 0.0625,
+        "mt3d:opacity-underground-route": 0.025
       }
     },
     {
@@ -2002,6 +2280,13 @@
           20,
           22
         ]
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-route": 0.1,
+        "mt3d:opacity-underground": 0.0625,
+        "mt3d:opacity-underground-route": 0.025
       }
     },
     {
@@ -2066,6 +2351,13 @@
           20,
           22
         ]
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-route": 0.1,
+        "mt3d:opacity-underground": 0.0625,
+        "mt3d:opacity-underground-route": 0.025
       }
     },
     {
@@ -2138,6 +2430,13 @@
           20,
           10
         ]
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-route": 0.1,
+        "mt3d:opacity-underground": 0.0625,
+        "mt3d:opacity-underground-route": 0.025
       }
     },
     {
@@ -2202,6 +2501,13 @@
           20,
           11.5
         ]
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-route": 0.1,
+        "mt3d:opacity-underground": 0.0625,
+        "mt3d:opacity-underground-route": 0.025
       }
     },
     {
@@ -2260,6 +2566,13 @@
           20,
           7.5
         ]
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-route": 0.1,
+        "mt3d:opacity-underground": 0.0625,
+        "mt3d:opacity-underground-route": 0.025
       }
     },
     {
@@ -2332,6 +2645,13 @@
           20,
           11.5
         ]
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-route": 0.1,
+        "mt3d:opacity-underground": 0.0625,
+        "mt3d:opacity-underground-route": 0.025
       }
     },
     {
@@ -2401,6 +2721,13 @@
           20,
           18
         ]
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-route": 0.1,
+        "mt3d:opacity-underground": 0.0625,
+        "mt3d:opacity-underground-route": 0.025
       }
     },
     {
@@ -2459,6 +2786,13 @@
           20,
           13
         ]
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-route": 0.1,
+        "mt3d:opacity-underground": 0.0625,
+        "mt3d:opacity-underground-route": 0.025
       }
     },
     {
@@ -2516,6 +2850,13 @@
           20,
           18
         ]
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-route": 0.1,
+        "mt3d:opacity-underground": 0.0625,
+        "mt3d:opacity-underground-route": 0.025
       }
     },
     {
@@ -2590,6 +2931,13 @@
           20,
           18
         ]
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-route": 0.1,
+        "mt3d:opacity-underground": 0.0625,
+        "mt3d:opacity-underground-route": 0.025
       }
     },
     {
@@ -2639,6 +2987,13 @@
           20,
           2
         ]
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-route": 0.1,
+        "mt3d:opacity-underground": 0.0625,
+        "mt3d:opacity-underground-route": 0.025
       }
     },
     {
@@ -2692,6 +3047,13 @@
           20,
           8
         ]
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-route": 0.1,
+        "mt3d:opacity-underground": 0.0625,
+        "mt3d:opacity-underground-route": 0.025
       }
     },
     {
@@ -2741,6 +3103,13 @@
           20,
           2
         ]
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-route": 0.1,
+        "mt3d:opacity-underground": 0.0625,
+        "mt3d:opacity-underground-route": 0.025
       }
     },
     {
@@ -2794,6 +3163,13 @@
           20,
           8
         ]
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-route": 0.1,
+        "mt3d:opacity-underground": 0.0625,
+        "mt3d:opacity-underground-route": 0.025
       }
     },
     {
@@ -2813,6 +3189,13 @@
       "layout": {
         "icon-image": "arrow",
         "symbol-placement": "line"
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-route": 0.1,
+        "mt3d:opacity-underground": 0.0625,
+        "mt3d:opacity-underground-route": 0.025
       }
     },
     {
@@ -2833,6 +3216,13 @@
         "icon-image": "arrow",
         "icon-rotate": 180,
         "symbol-placement": "line"
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-route": 0.1,
+        "mt3d:opacity-underground": 0.0625,
+        "mt3d:opacity-underground-route": 0.025
       }
     },
     {
@@ -2946,6 +3336,13 @@
           20,
           15
         ]
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-route": 0.1,
+        "mt3d:opacity-underground": 0.0625,
+        "mt3d:opacity-underground-route": 0.025
       }
     },
     {
@@ -2998,6 +3395,13 @@
           20,
           11
         ]
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-route": 0.1,
+        "mt3d:opacity-underground": 0.0625,
+        "mt3d:opacity-underground-route": 0.025
       }
     },
     {
@@ -3047,6 +3451,13 @@
           20,
           15
         ]
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-route": 0.1,
+        "mt3d:opacity-underground": 0.0625,
+        "mt3d:opacity-underground-route": 0.025
       }
     },
     {
@@ -3114,6 +3525,13 @@
           20,
           25
         ]
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-route": 0.1,
+        "mt3d:opacity-underground": 0.0625,
+        "mt3d:opacity-underground-route": 0.025
       }
     },
     {
@@ -3177,6 +3595,13 @@
           20,
           18
         ]
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-route": 0.1,
+        "mt3d:opacity-underground": 0.0625,
+        "mt3d:opacity-underground-route": 0.025
       }
     },
     {
@@ -3227,6 +3652,13 @@
           20,
           17
         ]
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-route": 0.1,
+        "mt3d:opacity-underground": 0.0625,
+        "mt3d:opacity-underground-route": 0.025
       }
     },
     {
@@ -3281,6 +3713,13 @@
           20,
           22
         ]
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-route": 0.1,
+        "mt3d:opacity-underground": 0.0625,
+        "mt3d:opacity-underground-route": 0.025
       }
     },
     {
@@ -3338,6 +3777,13 @@
           20,
           22
         ]
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-route": 0.1,
+        "mt3d:opacity-underground": 0.0625,
+        "mt3d:opacity-underground-route": 0.025
       }
     },
     {
@@ -3401,6 +3847,13 @@
           20,
           10
         ]
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-route": 0.1,
+        "mt3d:opacity-underground": 0.0625,
+        "mt3d:opacity-underground-route": 0.025
       }
     },
     {
@@ -3458,6 +3911,13 @@
           20,
           11.5
         ]
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-route": 0.1,
+        "mt3d:opacity-underground": 0.0625,
+        "mt3d:opacity-underground-route": 0.025
       }
     },
     {
@@ -3510,6 +3970,13 @@
           20,
           7.5
         ]
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-route": 0.1,
+        "mt3d:opacity-underground": 0.0625,
+        "mt3d:opacity-underground-route": 0.025
       }
     },
     {
@@ -3559,6 +4026,13 @@
           20,
           11.5
         ]
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-route": 0.1,
+        "mt3d:opacity-underground": 0.0625,
+        "mt3d:opacity-underground-route": 0.025
       }
     },
     {
@@ -3610,6 +4084,13 @@
           20,
           18
         ]
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-route": 0.1,
+        "mt3d:opacity-underground": 0.0625,
+        "mt3d:opacity-underground-route": 0.025
       }
     },
     {
@@ -3662,6 +4143,13 @@
           20,
           10
         ]
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-route": 0.1,
+        "mt3d:opacity-underground": 0.0625,
+        "mt3d:opacity-underground-route": 0.025
       }
     },
     {
@@ -3714,6 +4202,13 @@
           20,
           18
         ]
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-route": 0.1,
+        "mt3d:opacity-underground": 0.0625,
+        "mt3d:opacity-underground-route": 0.025
       }
     },
     {
@@ -3769,6 +4264,13 @@
           20,
           18
         ]
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-route": 0.1,
+        "mt3d:opacity-underground": 0.0625,
+        "mt3d:opacity-underground-route": 0.025
       }
     },
     {
@@ -3813,6 +4315,13 @@
           20,
           2
         ]
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-route": 0.1,
+        "mt3d:opacity-underground": 0.0625,
+        "mt3d:opacity-underground-route": 0.025
       }
     },
     {
@@ -3861,6 +4370,13 @@
           20,
           8
         ]
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-route": 0.1,
+        "mt3d:opacity-underground": 0.0625,
+        "mt3d:opacity-underground-route": 0.025
       }
     },
     {
@@ -3905,6 +4421,13 @@
           20,
           2
         ]
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-route": 0.1,
+        "mt3d:opacity-underground": 0.0625,
+        "mt3d:opacity-underground-route": 0.025
       }
     },
     {
@@ -3953,6 +4476,13 @@
           20,
           8
         ]
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-route": 0.1,
+        "mt3d:opacity-underground": 0.0625,
+        "mt3d:opacity-underground-route": 0.025
       }
     },
     {
@@ -3977,6 +4507,13 @@
           14,
           "hsl(35,6%,79%)"
         ]
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-route": 0.1,
+        "mt3d:opacity-underground": 0.0625,
+        "mt3d:opacity-underground-route": 0.025
       }
     },
     {
@@ -5533,6 +6070,13 @@
         ],
         "text-rotation-alignment": "viewport",
         "text-size": 10
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-route": 0.1,
+        "mt3d:opacity-underground": 0.0625,
+        "mt3d:opacity-underground-route": 0.025
       }
     },
     {
@@ -6377,6 +6921,13 @@
       "minzoom": 14,
       "layout": {
         "visibility": "none"
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-route": 0.1,
+        "mt3d:opacity-underground": 0.0625,
+        "mt3d:opacity-underground-route": 0.025
       }
     }
   ],
