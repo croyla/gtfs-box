@@ -174,7 +174,7 @@ MapLibre GL JS is released under the BSD 3-Clause License.
 
 ### Summary
 
-MapLibre GL JS v4.7.1 diverged from Mapbox GL JS v3.x in several ways. **8 critical patches** were required in MT3D source code:
+MapLibre GL JS v4.7.1 diverged from Mapbox GL JS v3.x in several ways. **9 critical patches** were required in MT3D source code:
 
 0. **Import Statement** - Changed from 'mapbox-gl' to 'maplibre-gl'
 1. **setLights()** - Feature detection for 3D lighting (Mapbox v3+ only)
@@ -185,6 +185,7 @@ MapLibre GL JS v4.7.1 diverged from Mapbox GL JS v3.x in several ways. **8 criti
 6. **Paint Property Errors** - Try-catch for getPaintProperty/setPaintProperty
 7. **getLights()** - Feature detection with default ambient lighting
 8. **TrafficLayer Timing** - Initialization guards for async layer setup
+9. **getFreeCameraOptions()** - Fallback camera calculation for TrafficLayer.onAdd
 
 ### MapLibre vs Mapbox API Differences
 
@@ -522,6 +523,59 @@ setMode(viewMode, searchMode) {
 14. `updateBus()` - Check map before getModelPosition()
 
 **Impact:** CRITICAL for map functionality. Without these checks, the map crashes during initialization when methods are called before the layer is fully initialized. The console warnings help debug initialization order issues.
+
+#### 9. getFreeCameraOptions() Method (Not Available in MapLibre) - **CRITICAL**
+**File:** `src/layers/traffic-layer.js:35` (onAdd method)
+
+**Issue:** MapLibre doesn't have the `getFreeCameraOptions()` method. The TrafficLayer's `onAdd()` method was calling this to get the camera Z position, causing the entire onAdd to fail silently and preventing the layer from initializing at all.
+
+**Error Symptom:** Map loads tiles but doesn't render. No visible errors, but the TrafficLayer never initializes because onAdd throws an uncaught error.
+
+**Patch:**
+```javascript
+// Before
+onAdd(map, context) {
+    const me = this,
+        scene = context.scene,
+        zoom = map.getZoom(),
+        cameraZ = map.map.getFreeCameraOptions().position.z,
+        modelOrigin = map.getModelOrigin(),
+        ...
+
+// After
+onAdd(map, context) {
+    const me = this,
+        scene = context.scene,
+        zoom = map.getZoom();
+
+    // MapLibre compatibility: getFreeCameraOptions might not exist
+    let cameraZ;
+    try {
+        if (typeof map.map.getFreeCameraOptions === 'function') {
+            cameraZ = map.map.getFreeCameraOptions().position.z;
+        } else {
+            // Fallback: calculate camera Z from zoom and pitch
+            const pitch = map.map.getPitch();
+            cameraZ = Math.pow(2, 14 - zoom) * Math.cos(pitch * Math.PI / 180) * 512;
+        }
+    } catch (e) {
+        console.warn('Failed to get camera Z, using fallback:', e.message);
+        cameraZ = Math.pow(2, 14 - zoom) * 512; // Simple fallback
+    }
+
+    const modelOrigin = map.getModelOrigin(),
+        ...
+```
+
+**Impact:** **MOST CRITICAL PATCH**. Without this fix:
+- The TrafficLayer's onAdd() throws an error and never completes
+- `computeRenderer`, `context`, `map` are never set
+- All mesh sets are never created
+- The entire 3D rendering layer doesn't initialize
+- Map loads tiles but shows a blank screen
+- All defensive checks in patch #8 return early because properties are undefined
+
+This was the root cause preventing the map from rendering at all. Once this is fixed, the map should display correctly.
 
 ### Applying Patches
 
