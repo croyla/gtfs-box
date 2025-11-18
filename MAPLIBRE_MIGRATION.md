@@ -347,6 +347,50 @@ for (const item of opacity) {
 
 **Impact:** This is critical for map initialization. Without these checks, the map fails to load when processing layer opacities. The patches add defensive programming to handle MapLibre's different getPaintProperty behavior.
 
+#### 6. getLights() Method (Not Available in MapLibre) - **CRITICAL**
+**File:** `src/helpers/helpers-mapbox.js:262` (hasDarkBackground function)
+
+**Issue:** MapLibre doesn't have the `getLights()` method. The `hasDarkBackground()` function calls this to determine lighting for background color calculations, causing crashes when the traffic layer initializes.
+
+**Patch:**
+```javascript
+// Before
+const light = map.getLights().filter(({type}) => type === 'ambient')[0],
+    lightColorElements = parseCSSColor(light.properties.color),
+    lightIntensity = light.properties.intensity;
+
+// After
+let lightColorElements, lightIntensity;
+
+if (typeof map.getLights === 'function') {
+    const lights = map.getLights();
+    const light = lights ? lights.filter(({type}) => type === 'ambient')[0] : null;
+
+    if (light && light.properties) {
+        lightColorElements = parseCSSColor(light.properties.color);
+        lightIntensity = light.properties.intensity;
+    } else {
+        // Fallback if no ambient light found
+        lightColorElements = [255, 255, 255];
+        lightIntensity = 0.7;
+    }
+} else {
+    // Default ambient light values (similar to daytime lighting)
+    lightColorElements = [255, 255, 255];
+    lightIntensity = 0.7;
+}
+```
+
+**Additional Safety Checks:**
+```javascript
+// Also added layer.paint validation
+if (!layer || !layer.paint) {
+    return value;
+}
+```
+
+**Impact:** Without this patch, the application crashes when the traffic layer tries to determine if the background is dark. The fallback uses standard daytime ambient lighting values (white light at 0.7 intensity).
+
 ### Applying Patches
 
 The patch file `mt3d-maplibre.patch` contains all required changes. To apply:
