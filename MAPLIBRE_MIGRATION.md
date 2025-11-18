@@ -327,67 +327,89 @@ _order.map(id => _layers[id]).filter(layer =>
 
 **Impact:** This is critical for map initialization. Without this check, the map fails to load when encountering undefined layers. The patch validates layer existence before destructuring properties.
 
-#### 6. Style Opacity Property Handling - **CRITICAL**
+#### 6. Paint Property Error Handling - **CRITICAL**
 **Files:**
-- `src/helpers/helpers-mapbox.js:350-380` (getStyleOpacities function)
-- `src/helpers/helpers-mapbox.js:406-437` (setStyleOpacities function)
+- `src/helpers/helpers-mapbox.js:353-363` (getStyleOpacities function)
+- `src/helpers/helpers-mapbox.js:418-449` (setStyleOpacities function)
 
-**Issue:** MapLibre's `getPaintProperty()` may return `undefined` or have different structure than Mapbox, causing `TypeError: Cannot read properties of undefined (reading 'value')` when processing layer opacity.
+**Issue:** MapLibre's `getPaintProperty()` and `setPaintProperty()` throw errors when accessing certain layer types or properties that don't exist, causing `TypeError: Cannot read properties of undefined (reading 'value')` at runtime.
 
-**Patch (getStyleOpacities):**
+**Patch (getStyleOpacities - Error handling for getPaintProperty):**
 ```javascript
 // Before
-const key = `${type}-opacity`,
-    prop = propMapping[id] || valueOrDefault(map.getPaintProperty(id, key), 1);
-
-if (!isNaN(prop)) {
-    opacities.push({id, key, opacity: prop, metadata});
-} else if (prop.stops) {
-    // ... process stops
-
-// After
-const key = `${type}-opacity`;
-let prop = propMapping[id];
-
 if (prop === undefined) {
     const paintProp = map.getPaintProperty(id, key);
     prop = valueOrDefault(paintProp, 1);
 }
 
-if (!prop) {
-    opacities.push({id, key, opacity: 1, metadata});
-    return;
+// After
+// MapLibre compatibility: getPaintProperty might return undefined or throw
+if (prop === undefined) {
+    try {
+        const paintProp = map.getPaintProperty(id, key);
+        prop = valueOrDefault(paintProp, 1);
+    } catch (e) {
+        // MapLibre may throw when accessing certain layer properties
+        console.warn(`Failed to get paint property for layer ${id}:`, e.message);
+        prop = 1;
+    }
 }
-
-if (!isNaN(prop)) {
-    opacities.push({id, key, opacity: prop, metadata});
-} else if (prop && prop.stops) {
-    const opacity = [];
-    prop.stops.forEach((item, index) => {
-        if (item && item[1] !== undefined) {
-            opacity.push({index, value: item[1]});
-        }
-    });
-} else if (Array.isArray(prop) && prop.length > 0 && ...) {
-    // ... validate before accessing
 ```
 
-**Patch (setStyleOpacities):**
+**Patch (setStyleOpacities - Comprehensive error handling):**
 ```javascript
 // Before
-for (const {index, value} of opacity) {
-    const scaledOpacity = value * factor;
+if (key) {
+    if (Array.isArray(opacity)) {
+        prop = map.getPaintProperty(id, key);
+
+        for (const item of opacity) {
+            // ... process ...
+        }
+    } else {
+        prop = opacity * factor;
+    }
+    map.setPaintProperty(id, key, prop);
+}
 
 // After
-for (const item of opacity) {
-    if (!item || item.index === undefined || item.value === undefined) {
-        continue;
+if (key) {
+    try {
+        if (Array.isArray(opacity)) {
+            prop = map.getPaintProperty(id, key);
+
+            // MapLibre compatibility: Ensure prop exists before modifying
+            if (!prop) {
+                prop = 1;
+            }
+
+            for (const item of opacity) {
+                // MapLibre compatibility: Ensure item has required properties
+                if (!item || item.index === undefined || item.value === undefined) {
+                    continue;
+                }
+
+                const {index, value} = item;
+                const scaledOpacity = value * factor;
+
+                if (prop.stops) {
+                    prop.stops[index][1] = scaledOpacity;
+                } else if (Array.isArray(prop)) {
+                    prop[index] = scaledOpacity;
+                }
+            }
+        } else {
+            prop = opacity * factor;
+        }
+        map.setPaintProperty(id, key, prop);
+    } catch (e) {
+        // MapLibre may throw when accessing/setting certain layer properties
+        console.warn(`Failed to set paint property for layer ${id}:`, e.message);
     }
-    const {index, value} = item;
-    const scaledOpacity = value * factor;
+}
 ```
 
-**Impact:** This is critical for map initialization. Without these checks, the map fails to load when processing layer opacities. The patches add defensive programming to handle MapLibre's different getPaintProperty behavior.
+**Impact:** This is CRITICAL for map initialization. MapLibre throws errors when accessing paint properties for layer types that differ from Mapbox. The try-catch blocks gracefully handle these errors with console warnings and default values, allowing the map to load instead of crashing.
 
 #### 7. getLights() Method (Not Available in MapLibre) - **CRITICAL**
 **File:** `src/helpers/helpers-mapbox.js:262` (hasDarkBackground function)
