@@ -7,7 +7,7 @@ const SOURCES = [
     zoom: 10,
     center: [12.95, 77.61],
     bearing: 0,
-    pitch: 60 
+    pitch: 60
     },
     {
     label: '都営バス (東京)',
