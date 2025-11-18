@@ -285,6 +285,68 @@ if (mbox.__deck && mbox.__deck.props) {
 
 **Impact:** Prevents crashes when deck.gl integration is not yet initialized. Allows the map to load gracefully even if some deck.gl features aren't available.
 
+#### 5. Style Opacity Property Handling - **CRITICAL**
+**Files:**
+- `src/helpers/helpers-mapbox.js:304` (getStyleOpacities function)
+- `src/helpers/helpers-mapbox.js:366` (setStyleOpacities function)
+
+**Issue:** MapLibre's `getPaintProperty()` may return `undefined` or have different structure than Mapbox, causing `TypeError: Cannot read properties of undefined (reading 'value')` when processing layer opacity.
+
+**Patch (getStyleOpacities):**
+```javascript
+// Before
+const key = `${type}-opacity`,
+    prop = propMapping[id] || valueOrDefault(map.getPaintProperty(id, key), 1);
+
+if (!isNaN(prop)) {
+    opacities.push({id, key, opacity: prop, metadata});
+} else if (prop.stops) {
+    // ... process stops
+
+// After
+const key = `${type}-opacity`;
+let prop = propMapping[id];
+
+if (prop === undefined) {
+    const paintProp = map.getPaintProperty(id, key);
+    prop = valueOrDefault(paintProp, 1);
+}
+
+if (!prop) {
+    opacities.push({id, key, opacity: 1, metadata});
+    return;
+}
+
+if (!isNaN(prop)) {
+    opacities.push({id, key, opacity: prop, metadata});
+} else if (prop && prop.stops) {
+    const opacity = [];
+    prop.stops.forEach((item, index) => {
+        if (item && item[1] !== undefined) {
+            opacity.push({index, value: item[1]});
+        }
+    });
+} else if (Array.isArray(prop) && prop.length > 0 && ...) {
+    // ... validate before accessing
+```
+
+**Patch (setStyleOpacities):**
+```javascript
+// Before
+for (const {index, value} of opacity) {
+    const scaledOpacity = value * factor;
+
+// After
+for (const item of opacity) {
+    if (!item || item.index === undefined || item.value === undefined) {
+        continue;
+    }
+    const {index, value} = item;
+    const scaledOpacity = value * factor;
+```
+
+**Impact:** This is critical for map initialization. Without these checks, the map fails to load when processing layer opacities. The patches add defensive programming to handle MapLibre's different getPaintProperty behavior.
+
 ### Applying Patches
 
 The patch file `mt3d-maplibre.patch` contains all required changes. To apply:
