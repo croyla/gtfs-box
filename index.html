@@ -219,34 +219,79 @@
 	<script src="mt3d-plugin-plateau.min.js"></script>
 	<script>
 		// Patch Mini Tokyo 3D's Map class AFTER it loads
+		// This is the CRITICAL patch that fixes the metadata error
 		(function() {
-			// Find MT3D's Map class in the mt3d namespace
 			if (window.mt3d && window.mt3d.Map) {
 				const MT3DMapPrototype = window.mt3d.Map.prototype;
 
-				// Store original addLayer if it exists
 				if (MT3DMapPrototype.addLayer) {
 					const originalMT3DAddLayer = MT3DMapPrototype.addLayer;
 
-					// Wrap MT3D's addLayer method
 					MT3DMapPrototype.addLayer = function(layer, beforeId) {
-						// Ensure all layer objects have metadata property before adding
-						if (layer && typeof layer === 'object') {
-							if (!layer.hasOwnProperty('metadata')) {
-								try {
-									Object.defineProperty(layer, 'metadata', {
-										value: {},
-										writable: true,
-										enumerable: true,
-										configurable: true
-									});
-								} catch (e) {
-									try {
-										layer.metadata = {};
-									} catch (e2) {
-										console.warn('Could not initialize metadata on MT3D layer:', layer);
+						console.log('[MT3D-PATCH] addLayer called');
+
+						// CRITICAL FIX: Patch the internal MapLibre map's style.getOwnLayer
+						// MT3D accesses this.map.style.getOwnLayer() at geojson-layer.js:25
+						if (this.map && this.map.style && !this.map.style._mtglPatched) {
+							console.log('[MT3D-PATCH] Patching map.style.getOwnLayer!');
+							const style = this.map.style;
+
+							if (!style._customLayers) {
+								style._customLayers = {};
+							}
+
+							const originalGetOwnLayer = style.getOwnLayer;
+
+							style.getOwnLayer = function(id) {
+								console.log('[MT3D-PATCH] getOwnLayer called for:', id);
+
+								// Try original if it exists
+								if (typeof originalGetOwnLayer === 'function') {
+									const layer = originalGetOwnLayer.call(this, id);
+									if (layer) {
+										return layer;
 									}
 								}
+
+								// Check cache
+								if (style._customLayers[id]) {
+									return style._customLayers[id];
+								}
+
+								// Try _layers
+								if (this._layers && this._layers[id]) {
+									const layer = this._layers[id];
+									style._customLayers[id] = layer;
+									return layer;
+								}
+
+								// Create proxy with metadata property
+								console.log('[MT3D-PATCH] Creating proxy layer for:', id);
+								const proxyLayer = {
+									id: id,
+									metadata: {}
+								};
+								style._customLayers[id] = proxyLayer;
+								return proxyLayer;
+							};
+
+							style._mtglPatched = true;
+							console.log('[MT3D-PATCH] style.getOwnLayer created!');
+						}
+
+						// Ensure layer has metadata
+						if (layer && typeof layer === 'object' && !layer.hasOwnProperty('metadata')) {
+							try {
+								Object.defineProperty(layer, 'metadata', {
+									value: {},
+									writable: true,
+									enumerable: true,
+									configurable: true
+								});
+							} catch (e) {
+								try {
+									layer.metadata = {};
+								} catch (e2) {}
 							}
 						}
 
