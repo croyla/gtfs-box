@@ -70,21 +70,24 @@
 
 			// Wrap addLayer to ensure layers have metadata property
 			MapPrototype.addLayer = function(layer, beforeId) {
-				// Ensure the layer object has a metadata property
+				// Ensure the layer object has a metadata property using Object.defineProperty
 				if (typeof layer === 'object' && layer !== null) {
-					if (!layer.metadata) {
-						layer.metadata = {};
-					}
-					// If it's a custom layer with onAdd, wrap onAdd to handle metadata
-					if (typeof layer.onAdd === 'function') {
-						const originalOnAdd = layer.onAdd;
-						layer.onAdd = function(map, gl) {
-							// Ensure layer has metadata before calling original onAdd
-							if (!this.metadata) {
-								this.metadata = {};
+					if (!layer.hasOwnProperty('metadata')) {
+						try {
+							Object.defineProperty(layer, 'metadata', {
+								value: {},
+								writable: true,
+								enumerable: true,
+								configurable: true
+							});
+						} catch (e) {
+							// Fallback to direct assignment
+							try {
+								layer.metadata = {};
+							} catch (e2) {
+								console.warn('Could not initialize metadata on layer:', layer);
 							}
-							return originalOnAdd.call(this, map, gl);
-						};
+						}
 					}
 				}
 				return originalAddLayer.call(this, layer, beforeId);
@@ -131,6 +134,49 @@
 	<script src="mini-tokyo-3d.min.js"></script>
 	<!-- <script src="mt3d-plugin-precipitation.min.js"></script> -->
 	<script src="mt3d-plugin-plateau.min.js"></script>
+	<script>
+		// Patch Mini Tokyo 3D's Map class AFTER it loads
+		(function() {
+			// Find MT3D's Map class in the mt3d namespace
+			if (window.mt3d && window.mt3d.Map) {
+				const MT3DMapPrototype = window.mt3d.Map.prototype;
+
+				// Store original addLayer if it exists
+				if (MT3DMapPrototype.addLayer) {
+					const originalMT3DAddLayer = MT3DMapPrototype.addLayer;
+
+					// Wrap MT3D's addLayer method
+					MT3DMapPrototype.addLayer = function(layer, beforeId) {
+						// Ensure all layer objects have metadata property before adding
+						if (layer && typeof layer === 'object') {
+							if (!layer.hasOwnProperty('metadata')) {
+								try {
+									Object.defineProperty(layer, 'metadata', {
+										value: {},
+										writable: true,
+										enumerable: true,
+										configurable: true
+									});
+								} catch (e) {
+									try {
+										layer.metadata = {};
+									} catch (e2) {
+										console.warn('Could not initialize metadata on MT3D layer:', layer);
+									}
+								}
+							}
+						}
+
+						return originalMT3DAddLayer.call(this, layer, beforeId);
+					};
+				}
+
+				console.log('Patched Mini Tokyo 3D Map class for metadata compatibility');
+			} else {
+				console.warn('Could not find mt3d.Map to patch');
+			}
+		})();
+	</script>
 </head>
 <body style="width: 100%; height: 100%; margin: 0; padding: 0; position: absolute; overscroll-behavior: none;">
 	<div class="header">
