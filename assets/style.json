@@ -6,36 +6,6 @@
   "bearing": 0,
   "pitch": 60,
   "glyphs": "https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf",
-  "fog": {
-    "vertical-range": [30, 120],
-    "range": [
-      "interpolate", ["linear"], ["zoom"],
-      13, ["literal", [1, 10]],
-      15, ["literal", [1, 4]],
-      22, ["literal", [14, 20]]
-    ],
-    "color": [
-      "interpolate", ["linear"], ["zoom"],
-      4, "hsl(230, 87%, 82%)",
-      6, "hsl(230, 87%, 82%)"
-    ],
-    "high-color": "hsl(230, 87%, 82%)",
-    "space-color": [
-      "interpolate", ["linear"], ["zoom"],
-      4, "hsl(230, 36%, 12%)",
-      6, "hsl(230, 36%, 12%)"
-    ],
-    "horizon-blend": [
-      "interpolate", ["linear"], ["zoom"],
-      4, 0.02,
-      6, 0.001
-    ],
-    "star-intensity": [
-      "interpolate", ["linear"], ["zoom"],
-      4, 0.15,
-      6, 0
-    ]
-  },
   "sources": {
     "openmaptiles": {
       "type": "vector",
