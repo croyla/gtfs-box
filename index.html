@@ -32,12 +32,88 @@
 	<script>
 		// Create Mapbox GL JS compatibility layer for Mini Tokyo 3D
 		window.mapboxgl = window.maplibregl;
-		// Prevent accessToken requirement
-		window.mapboxgl.accessToken = null;
+		// Set a dummy accessToken to satisfy MT3D checks
+		window.mapboxgl.accessToken = 'pk.maplibre';
+
+		// Intercept fetch to mock Mapbox API responses
+		const originalFetch = window.fetch;
+		window.fetch = function(url, options) {
+			// Mock Mapbox Tilequery API for timezone lookup
+			if (typeof url === 'string' && url.includes('api.mapbox.com/v4/') && url.includes('/tilequery/')) {
+				console.log('Intercepted Mapbox tilequery request, returning mock timezone data');
+				// Return a mock timezone response (UTC+0)
+				return Promise.resolve(new Response(JSON.stringify({
+					type: 'FeatureCollection',
+					features: [{
+						type: 'Feature',
+						geometry: { type: 'Point', coordinates: [0, 0] },
+						properties: { TZID: 'UTC' }
+					}]
+				}), {
+					status: 200,
+					headers: { 'Content-Type': 'application/json' }
+				}));
+			}
+			// Pass through all other requests
+			return originalFetch.apply(this, arguments);
+		};
 	</script>
 	<script src="mini-tokyo-3d.min.js"></script>
 	<!-- <script src="mt3d-plugin-precipitation.min.js"></script> -->
 	<script src="mt3d-plugin-plateau.min.js"></script>
+	<script>
+		// Patch maplibregl.Map to handle MT3D's metadata access patterns
+		(function() {
+			const OriginalMap = maplibregl.Map;
+			maplibregl.Map = function(options) {
+				const map = new OriginalMap(options);
+
+				// Store original methods
+				const originalGetLayer = map.getLayer;
+				const originalSetLayoutProperty = map.setLayoutProperty;
+				const originalSetPaintProperty = map.setPaintProperty;
+
+				// Wrap getLayer to always return a valid object with metadata
+				map.getLayer = function(id) {
+					const layer = originalGetLayer.call(this, id);
+					if (layer && !layer.metadata) {
+						layer.metadata = {};
+					}
+					return layer;
+				};
+
+				// Wrap setLayoutProperty to handle undefined layers gracefully
+				map.setLayoutProperty = function(layerId, name, value) {
+					try {
+						const layer = this.getLayer(layerId);
+						if (layer) {
+							return originalSetLayoutProperty.call(this, layerId, name, value);
+						}
+					} catch (e) {
+						console.warn(`Could not set layout property ${name} on layer ${layerId}:`, e);
+					}
+				};
+
+				// Wrap setPaintProperty to handle undefined layers gracefully
+				map.setPaintProperty = function(layerId, name, value) {
+					try {
+						const layer = this.getLayer(layerId);
+						if (layer) {
+							return originalSetPaintProperty.call(this, layerId, name, value);
+						}
+					} catch (e) {
+						console.warn(`Could not set paint property ${name} on layer ${layerId}:`, e);
+					}
+				};
+
+				return map;
+			};
+
+			// Copy static properties
+			Object.setPrototypeOf(maplibregl.Map, OriginalMap);
+			Object.setPrototypeOf(maplibregl.Map.prototype, OriginalMap.prototype);
+		})();
+	</script>
 </head>
 <body style="width: 100%; height: 100%; margin: 0; padding: 0; position: absolute; overscroll-behavior: none;">
 	<div class="header">
