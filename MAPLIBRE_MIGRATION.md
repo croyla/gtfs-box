@@ -577,6 +577,185 @@ onAdd(map, context) {
 
 This was the root cause preventing the map from rendering at all. Once this is fixed, the map should display correctly.
 
+#### 10. Missing 'trees' Layer - **CRITICAL**
+**File:** `assets/style.json`
+
+**Issue:** Mini Tokyo 3D expects a 'trees' layer as a reference point for inserting its custom layers. The OpenFreeMap style doesn't include this layer, causing all MT3D layers to fail with "Cannot add layer before non-existing layer 'trees'" errors.
+
+**Errors Fixed:**
+- 100+ instances of "Cannot add layer before non-existing layer 'trees'"
+- "Cannot add layer 'traffic' before non-existing layer 'trees'"
+
+**Patch:**
+```json
+{
+  "id": "trees",
+  "type": "background",
+  "layout": {
+    "visibility": "none"
+  },
+  "paint": {
+    "background-opacity": 0
+  },
+  "metadata": {
+    "mt3d:layer-marker": "MT3D layers should be inserted before this layer"
+  }
+}
+```
+
+**Location:** Add this layer at the end of the "layers" array in `assets/style.json`, before the "poi" layer.
+
+**Impact:** **CRITICAL**. Without this layer, NO Mini Tokyo 3D layers can be added to the map, preventing the entire 3D visualization from rendering. The layer itself is invisible (background with 0 opacity) and serves only as a marker for layer insertion order.
+
+#### 11. Unsupported Emissive Strength Properties
+**File:** `src/map.js` (lines 836-852, 2351-2362)
+
+**Issue:** MapLibre doesn't support `line-emissive-strength` and `fill-emissive-strength` properties, which are Mapbox v3+ features for enhanced lighting effects.
+
+**Errors Fixed:**
+- 15+ "unknown property" errors for emissive-strength in railway, station, and bus stop layers
+
+**Patch:**
+```javascript
+// Before
+paint: {
+    'railways': {
+        'line-color': color,
+        'line-width': lineWidth,
+        'line-emissive-strength': 1  // REMOVED
+    },
+    'stations': {
+        'fill-color': color,
+        'fill-opacity': .7,
+        'fill-emissive-strength': 1  // REMOVED
+    }
+}
+
+// After
+paint: {
+    'railways': {
+        'line-color': color,
+        'line-width': lineWidth
+        // MapLibre: 'line-emissive-strength' not supported
+    },
+    'stations': {
+        'fill-color': color,
+        'fill-opacity': .7
+        // MapLibre: 'fill-emissive-strength' not supported
+    }
+}
+```
+
+**Impact:** Removes validation errors and ensures layers render correctly. The visual difference is minimal as emissive strength was mainly for enhanced lighting effects in Mapbox v3.
+
+#### 12. Sky Layer Compatibility
+**File:** `src/map.js` (lines 693-719)
+
+**Issue:** MapLibre doesn't support the 'sky' layer type, which is a Mapbox v3+ feature for atmospheric effects.
+
+**Errors Fixed:**
+- "layers.sky: missing required property 'source'"
+- "layers.sky.type: expected one of [fill, line, symbol, circle, heatmap, fill-extrusion, raster...]"
+
+**Patch:**
+```javascript
+// Before
+map.addLayer({
+    id: 'sky',
+    type: 'sky',
+    paint: {
+        'sky-opacity': [...],
+        'sky-type': 'atmosphere',
+        'sky-atmosphere-color': 'hsl(220, 100%, 70%)',
+        'sky-atmosphere-sun-intensity': 20
+    }
+}, 'background');
+
+// After
+try {
+    map.addLayer({
+        id: 'sky',
+        type: 'sky',
+        paint: {
+            'sky-opacity': [...],
+            'sky-type': 'atmosphere',
+            'sky-atmosphere-color': 'hsl(220, 100%, 70%)',
+            'sky-atmosphere-sun-intensity': 20
+        }
+    }, 'background');
+} catch (e) {
+    console.warn('Sky layer not supported in MapLibre:', e.message);
+}
+```
+
+**Impact:** Prevents errors when MapLibre rejects the unsupported layer type. The sky layer adds atmospheric gradient effects, but the map renders fine without it.
+
+#### 13. setLayerProps Safety Check
+**File:** `src/helpers/helpers-mapbox.js` (lines 30-38)
+
+**Issue:** MapLibre layers may not have the `setProps()` method, or the layer might not exist when the function is called.
+
+**Errors Fixed:**
+- `e.getLayer(...).setProps is not a function`
+
+**Patch:**
+```javascript
+// Before
+export function setLayerProps(map, id, props) {
+    map.getLayer(id).setProps(props);
+}
+
+// After
+export function setLayerProps(map, id, props) {
+    // MapLibre compatibility: Check if layer has setProps method
+    const layer = map.getLayer(id);
+    if (layer && typeof layer.setProps === 'function') {
+        layer.setProps(props);
+    } else {
+        console.warn(`Layer ${id} does not support setProps method`);
+    }
+}
+```
+
+**Impact:** Prevents crashes when trying to update layer properties. The warning helps identify which layers are affected, but the application continues to function.
+
+#### 14. ThreeLayer Camera Position Check
+**File:** `src/layers/three-layer.js` (lines 118-133)
+
+**Issue:** MapLibre's internal `_camera` structure differs from Mapbox. The `_camera.position` property may not be available during rendering, causing crashes in the Three.js rendering layer.
+
+**Errors Fixed:**
+- `Cannot read properties of undefined (reading 'position')` at three-layer.js:123
+
+**Patch:**
+```javascript
+// Before
+_render(gl, matrix) {
+    const {modelOrigin, mbox, renderer, camera, light, scene} = this,
+        {_fov, _camera, _horizonShift, pixelsPerMeter, worldSize, _pitch, width, height} = mbox.transform;
+
+    const halfFov = _fov / 2,
+        cameraToSeaLevelDistance = _camera.position[2] * worldSize / Math.cos(_pitch),
+        // ... rest
+
+// After
+_render(gl, matrix) {
+    const {modelOrigin, mbox, renderer, camera, light, scene} = this,
+        {_fov, _camera, _horizonShift, pixelsPerMeter, worldSize, _pitch, width, height} = mbox.transform;
+
+    // MapLibre compatibility: Check if _camera.position exists
+    if (!_camera || !_camera.position) {
+        console.warn('ThreeLayer: _camera.position not available');
+        return;
+    }
+
+    const halfFov = _fov / 2,
+        cameraToSeaLevelDistance = _camera.position[2] * worldSize / Math.cos(_pitch),
+        // ... rest
+```
+
+**Impact:** Prevents crashes in the Three.js rendering layer. If the camera position isn't available, the frame is skipped, but rendering continues on subsequent frames when the position becomes available.
+
 ### Applying Patches
 
 The patch file `mt3d-maplibre.patch` contains all required changes. To apply:

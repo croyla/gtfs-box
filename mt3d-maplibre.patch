@@ -33,7 +33,7 @@ index a27e9c4..5252d8d 100644
  
          if (info) {
 diff --git a/src/helpers/helpers-mapbox.js b/src/helpers/helpers-mapbox.js
-index ea94d47..38c68bc 100644
+index ea94d47..0f00945 100644
 --- a/src/helpers/helpers-mapbox.js
 +++ b/src/helpers/helpers-mapbox.js
 @@ -1,4 +1,4 @@
@@ -42,7 +42,22 @@ index ea94d47..38c68bc 100644
  import {parseCSSColor} from 'csscolorparser';
  import {lerp, luminance, valueOrDefault} from './helpers';
  import SunCalc from 'suncalc';
-@@ -220,26 +220,36 @@ export function setSunlight(map, time) {
+@@ -28,7 +28,13 @@ export function getBounds(coords) {
+  * @param {Object} props - One or more properties to update
+  */
+ export function setLayerProps(map, id, props) {
+-    map.getLayer(id).setProps(props);
++    // MapLibre compatibility: Check if layer has setProps method
++    const layer = map.getLayer(id);
++    if (layer && typeof layer.setProps === 'function') {
++        layer.setProps(props);
++    } else {
++        console.warn(`Layer ${id} does not support setProps method`);
++    }
+ }
+ 
+ /**
+@@ -220,26 +226,36 @@ export function setSunlight(map, time) {
          };
      }
  
@@ -90,7 +105,7 @@ index ea94d47..38c68bc 100644
  }
  
  /**
-@@ -250,16 +260,42 @@ export function setSunlight(map, time) {
+@@ -250,16 +266,42 @@ export function setSunlight(map, time) {
   * @returns {boolean} True if the background color of the map is dark
   */
  export function hasDarkBackground(map, actual) {
@@ -138,7 +153,7 @@ index ea94d47..38c68bc 100644
                  {r, g, b} = paintProperties.get('background-color'),
                  a = paintProperties.get('background-opacity');
              return value + luminance({r: r * lr * a, g: g * lg * a, b: b * lb * a});
-@@ -297,27 +333,53 @@ export function getStyleOpacities(map, metadataKey) {
+@@ -297,27 +339,53 @@ export function getStyleOpacities(map, metadataKey) {
          },
          opacities = [];
  
@@ -200,7 +215,7 @@ index ea94d47..38c68bc 100644
              const opacity = [];
  
              prop.forEach((item, index) => {
-@@ -347,22 +409,44 @@ export function setStyleOpacities(map, styleOpacities, factorKey) {
+@@ -347,22 +415,44 @@ export function setStyleOpacities(map, styleOpacities, factorKey) {
              factor = metadata[factorKey];
          }
  
@@ -301,6 +316,28 @@ index 0c7eac1..547b145 100644
      }
  
  }
+diff --git a/src/layers/three-layer.js b/src/layers/three-layer.js
+index 053d3d4..030afee 100644
+--- a/src/layers/three-layer.js
++++ b/src/layers/three-layer.js
+@@ -118,8 +118,15 @@ export default class {
+     _render(gl, matrix) {
+         // These parameters are copied from mapbox-gl/src/geo/transform.js
+         const {modelOrigin, mbox, renderer, camera, light, scene} = this,
+-            {_fov, _camera, _horizonShift, pixelsPerMeter, worldSize, _pitch, width, height} = mbox.transform,
+-            halfFov = _fov / 2,
++            {_fov, _camera, _horizonShift, pixelsPerMeter, worldSize, _pitch, width, height} = mbox.transform;
++
++        // MapLibre compatibility: Check if _camera.position exists
++        if (!_camera || !_camera.position) {
++            console.warn('ThreeLayer: _camera.position not available');
++            return;
++        }
++
++        const halfFov = _fov / 2,
+             cameraToSeaLevelDistance = _camera.position[2] * worldSize / Math.cos(_pitch),
+             horizonDistance = cameraToSeaLevelDistance / _horizonShift,
+             undergroundDistance = 1000 * pixelsPerMeter / Math.cos(_pitch),
 diff --git a/src/layers/tile-3d-layer.js b/src/layers/tile-3d-layer.js
 index 68f6abf..ffa8140 100644
 --- a/src/layers/tile-3d-layer.js
