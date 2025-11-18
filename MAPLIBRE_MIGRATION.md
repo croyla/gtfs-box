@@ -756,6 +756,56 @@ _render(gl, matrix) {
 
 **Impact:** Prevents crashes in the Three.js rendering layer. If the camera position isn't available, the frame is skipped, but rendering continues on subsequent frames when the position becomes available.
 
+#### 15. Building Models Layer Check
+**File:** `src/map.js` (lines 1114-1117)
+
+**Issue:** Mini Tokyo 3D tries to control the visibility of a 'building-models' layer that exists in the original MT3D style but not in OpenFreeMap. This causes repeated "Cannot style non-existing layer" errors.
+
+**Errors Fixed:**
+- `Cannot style non-existing layer "building-models"`
+
+**Patch:**
+```javascript
+// Before
+// Hide building models when the clock speed is high as changing lights impacts performance
+map.setLayoutProperty('building-models', 'visibility', clock.speed <= 30 ? 'visible' : 'none');
+
+// After
+// Hide building models when the clock speed is high as changing lights impacts performance
+// MapLibre compatibility: Check if building-models layer exists
+if (map.getLayer('building-models')) {
+    map.setLayoutProperty('building-models', 'visibility', clock.speed <= 30 ? 'visible' : 'none');
+}
+```
+
+**Impact:** Eliminates repeated errors during map animation cycles. The building-models layer was used in the original MT3D style for 3D building rendering, but OpenFreeMap uses the standard fill-extrusion layers for 3D buildings instead.
+
+### Summary of All Patches
+
+**Total: 15 patches applied**
+
+**Critical patches** (map won't render without these):
+- Patch #0: Import statement fix (mapbox-gl → maplibre-gl)
+- Patch #9: getFreeCameraOptions() fallback - prevents initialization failure
+- Patch #10: Added 'trees' layer - allows MT3D layers to be inserted
+
+**Important patches** (prevents errors and crashes):
+- Patch #1: setLights() compatibility
+- Patch #3: getOwnLayer() fallback
+- Patch #6: Paint property error handling
+- Patch #7: getLights() compatibility
+- Patch #8: TrafficLayer initialization timing (14 methods)
+- Patch #13: setLayerProps safety check
+- Patch #14: ThreeLayer camera position check
+- Patch #15: Building models layer check
+
+**Cleanup patches** (removes validation warnings):
+- Patch #2: Sky layer safety
+- Patch #4: deck.gl timing guards
+- Patch #5: Layer filtering safety
+- Patch #11: Removed emissive-strength properties
+- Patch #12: Sky layer try-catch wrapper
+
 ### Applying Patches
 
 The patch file `mt3d-maplibre.patch` contains all required changes. To apply:

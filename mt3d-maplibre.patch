@@ -606,7 +606,7 @@ index 95c8e74..3802a8c 100644
          me.ugCarMeshSet.setTrackedInstanceID(instanceID);
          me.ogCarMeshSet.setTrackedInstanceID(instanceID);
 diff --git a/src/map.js b/src/map.js
-index 12c9e36..ee4b3bd 100644
+index 12c9e36..c11c79f 100644
 --- a/src/map.js
 +++ b/src/map.js
 @@ -1,5 +1,5 @@
@@ -705,7 +705,19 @@ index 12c9e36..ee4b3bd 100644
                          }
                      }[key],
                      metadata: {
-@@ -2312,8 +2320,8 @@ export default class extends Evented {
+@@ -1103,7 +1111,10 @@ export default class extends Evented {
+ 
+                 if (Math.floor((now - minDelay) / refreshInterval) !== Math.floor(me.lastRefresh / refreshInterval)) {
+                     // Hide building models when the clock speed is high as changing lights impacts performance
+-                    map.setLayoutProperty('building-models', 'visibility', clock.speed <= 30 ? 'visible' : 'none');
++                    // MapLibre compatibility: Check if building-models layer exists
++                    if (map.getLayer('building-models')) {
++                        map.setLayoutProperty('building-models', 'visibility', clock.speed <= 30 ? 'visible' : 'none');
++                    }
+ 
+                     helpersMapbox.setSunlight(map, now);
+                     if (me.searchMode === 'none' && me.clockMode === 'playback' && !me.removing) {
+@@ -2312,8 +2323,8 @@ export default class extends Evented {
                                  width,
                                  22,
                                  ['*', width, 8]
@@ -716,7 +728,7 @@ index 12c9e36..ee4b3bd 100644
                          },
                          metadata: {
                              'mt3d:opacity-effect': true,
-@@ -2343,13 +2351,13 @@ export default class extends Evented {
+@@ -2343,13 +2354,13 @@ export default class extends Evented {
                              paint: {
                                  'busstops': {
                                      'fill-color': ['get', 'color'],
