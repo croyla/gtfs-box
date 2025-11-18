@@ -522,7 +522,8 @@ const matchLang = location.search.match(/lang=(.*?)(?:&|$)/),
         accessToken: 'pk.eyJ1IjoibmFnaXgiLCJhIjoiY201emxlbGhkMDRqYjJxc2IzMnF0dzk5aCJ9.OxzbAxJoC_Myy13ypJ4EeA',
         searchControl: false,
         modeControl: false,
-        plugins: [mt3dPlateau({enabled: false})]
+        plugins: [mt3dPlateau({enabled: false})],
+        style: 'assets/style.json'
     };
 let initialIndex;
 
