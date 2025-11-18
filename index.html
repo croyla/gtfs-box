@@ -30,10 +30,7 @@
 	<!-- Load MapLibre GL JS and create Mapbox GL JS compatibility shim -->
 	<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 	<script>
-		// Create Mapbox GL JS compatibility layer for Mini Tokyo 3D
-		window.mapboxgl = window.maplibregl;
-		// Set a dummy accessToken to satisfy MT3D checks
-		window.mapboxgl.accessToken = 'pk.maplibre';
+		console.log('[INIT] MapLibre GL JS loaded, starting patches...');
 
 		// Intercept fetch to mock Mapbox API responses
 		const originalFetch = window.fetch;
@@ -130,66 +127,92 @@
 				}
 			};
 
-			// CRITICAL FIX: Patch style.getOwnLayer method
+			// CRITICAL FIX: Wrap Map constructor to patch style.getOwnLayer
 			// MT3D calls mbox.style.getOwnLayer(id).metadata = ... at geojson-layer.js:25
-			// We need to ensure getOwnLayer returns layers with writable metadata
+			// We must ensure getOwnLayer exists and returns layers with metadata
 
-			// Helper function to patch a style object
-			function patchStyleGetOwnLayer(style) {
-				if (!style || style._getOwnLayerPatched) return;
+			const OriginalMap = maplibregl.Map;
+			maplibregl.Map = function(...args) {
+				console.log('[PATCH] MapLibre Map constructor intercepted');
+				const map = new OriginalMap(...args);
 
-				const originalGetOwnLayer = style.getOwnLayer;
+				// Function to patch the style object
+				const patchStyle = () => {
+					if (map.style && !map.style._mtglPatched) {
+						console.log('[PATCH] Patching map.style for getOwnLayer support');
+						const style = map.style;
 
-				style.getOwnLayer = function(id) {
-					let layer;
-
-					// Try original method if it exists
-					if (originalGetOwnLayer) {
-						layer = originalGetOwnLayer.call(this, id);
-					} else {
-						// Fallback: try to get from internal _layers cache
-						layer = this._layers && this._layers[id];
-					}
-
-					// Ensure layer has writable metadata property
-					if (layer && !layer.hasOwnProperty('metadata')) {
-						try {
-							Object.defineProperty(layer, 'metadata', {
-								value: {},
-								writable: true,
-								enumerable: true,
-								configurable: true
-							});
-						} catch (e) {
-							try {
-								layer.metadata = {};
-							} catch (e2) {
-								console.warn('Could not add metadata to layer:', id, e2);
-							}
+						// MapLibre doesn't have getOwnLayer, so we create it
+						// Store layers in a Map for retrieval with metadata support
+						if (!style._customLayers) {
+							style._customLayers = {};
 						}
-					}
 
-					return layer;
+						// Intercept the internal _layers if it exists
+						const originalGetOwnLayer = style.getOwnLayer;
+
+						style.getOwnLayer = function(id) {
+							console.log('[PATCH] getOwnLayer called for:', id);
+
+							// First try original method (Mapbox compatibility)
+							if (typeof originalGetOwnLayer === 'function') {
+								const layer = originalGetOwnLayer.call(this, id);
+								if (layer) {
+									console.log('[PATCH] Original method found layer:', id);
+									return layer;
+								}
+							}
+
+							// Check our custom layer store
+							if (style._customLayers[id]) {
+								console.log('[PATCH] Found in custom layer store:', id);
+								return style._customLayers[id];
+							}
+
+							// Try to get from internal _layers (MapLibre internal structure)
+							if (this._layers && this._layers[id]) {
+								console.log('[PATCH] Found in _layers:', id);
+								const layer = this._layers[id];
+								// Cache it
+								style._customLayers[id] = layer;
+								return layer;
+							}
+
+							// Fallback: create a proxy layer object for the layer
+							// This allows MT3D to set metadata even if we don't have the real layer object
+							console.log('[PATCH] Creating proxy layer object for:', id);
+							const proxyLayer = {
+								id: id,
+								metadata: {}
+							};
+							style._customLayers[id] = proxyLayer;
+							return proxyLayer;
+						};
+
+						style._mtglPatched = true;
+						console.log('[PATCH] Style.getOwnLayer created and patched');
+					}
 				};
 
-				style._getOwnLayerPatched = true;
-			}
+				// Patch on style events
+				setTimeout(patchStyle, 0);
+				map.on('styledata', patchStyle);
+				map.on('load', patchStyle);
 
-			// Intercept style property access to patch it as soon as it's set
-			Object.defineProperty(MapPrototype, 'style', {
-				get: function() {
-					return this._style;
-				},
-				set: function(value) {
-					this._style = value;
-					// Patch the style object as soon as it's assigned
-					if (value) {
-						patchStyleGetOwnLayer(value);
-					}
-				},
-				configurable: true
-			});
+				return map;
+			};
+
+			// Preserve prototype chain
+			Object.setPrototypeOf(maplibregl.Map, OriginalMap);
+			Object.setPrototypeOf(maplibregl.Map.prototype, OriginalMap.prototype);
 		})();
+
+		// NOW create Mapbox GL JS compatibility layer AFTER all patches are applied
+		// This ensures MT3D uses our patched Map constructor
+		console.log('[INIT] Creating mapboxgl compatibility layer');
+		window.mapboxgl = window.maplibregl;
+		window.mapboxgl.accessToken = 'pk.maplibre';
+		console.log('[INIT] All patches applied, mapboxgl is ready for MT3D');
 	</script>
 	<script src="mini-tokyo-3d.min.js"></script>
 	<!-- <script src="mt3d-plugin-precipitation.min.js"></script> -->
