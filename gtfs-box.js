@@ -179,17 +179,20 @@ function loadGTFSSource(source) {
     updateVehicles(source);
 }
 
-// Update vehicles from GTFS-RT feed
-async function updateVehicles(source) {
-    if (!source.vehiclePositionUrl) return;
+// Load GTFS-RT protobuf schema
+let gtfsrtProto = null;
+
+async function loadGTFSRTProto() {
+    if (gtfsrtProto) return gtfsrtProto;
 
     try {
-        const response = await fetch(source.vehiclePositionUrl);
-        const buffer = await response.arrayBuffer();
-
-        // Parse GTFS-RT protobuf
-        const uint8Array = new Uint8Array(buffer);
-        const FeedMessage = protobuf.Root.fromJSON({
+        const root = await protobuf.load('https://raw.githubusercontent.com/google/transit/master/gtfs-realtime/proto/gtfs-realtime.proto');
+        gtfsrtProto = root.lookupType('transit_realtime.FeedMessage');
+        return gtfsrtProto;
+    } catch (error) {
+        console.error('Error loading GTFS-RT proto:', error);
+        // Fallback: define minimal schema inline
+        const root = protobuf.Root.fromJSON({
             nested: {
                 transit_realtime: {
                     nested: {
@@ -202,13 +205,57 @@ async function updateVehicles(source) {
                         FeedHeader: {
                             fields: {
                                 gtfsRealtimeVersion: { type: 'string', id: 1 },
+                                incrementality: { type: 'Incrementality', id: 2 },
                                 timestamp: { type: 'uint64', id: 3 }
+                            }
+                        },
+                        Incrementality: {
+                            values: {
+                                FULL_DATASET: 0,
+                                DIFFERENTIAL: 1
                             }
                         },
                         FeedEntity: {
                             fields: {
-                                id: { type: 'string', id: 1 },
-                                vehicle: { type: 'VehiclePosition', id: 3 }
+                                id: { type: 'string', id: 1, rule: 'required' },
+                                isDeleted: { type: 'bool', id: 2 },
+                                tripUpdate: { type: 'TripUpdate', id: 3 },
+                                vehicle: { type: 'VehiclePosition', id: 4 },
+                                alert: { type: 'Alert', id: 5 }
+                            }
+                        },
+                        TripUpdate: {
+                            fields: {
+                                trip: { type: 'TripDescriptor', id: 1, rule: 'required' },
+                                vehicle: { type: 'VehicleDescriptor', id: 3 },
+                                stopTimeUpdate: { rule: 'repeated', type: 'StopTimeUpdate', id: 2 },
+                                timestamp: { type: 'uint64', id: 4 },
+                                delay: { type: 'int32', id: 5 }
+                            }
+                        },
+                        StopTimeUpdate: {
+                            fields: {
+                                stopSequence: { type: 'uint32', id: 1 },
+                                stopId: { type: 'string', id: 4 },
+                                arrival: { type: 'StopTimeEvent', id: 2 },
+                                departure: { type: 'StopTimeEvent', id: 3 },
+                                scheduleRelationship: { type: 'ScheduleRelationship', id: 5 }
+                            },
+                            nested: {
+                                ScheduleRelationship: {
+                                    values: {
+                                        SCHEDULED: 0,
+                                        SKIPPED: 1,
+                                        NO_DATA: 2
+                                    }
+                                }
+                            }
+                        },
+                        StopTimeEvent: {
+                            fields: {
+                                delay: { type: 'int32', id: 1 },
+                                time: { type: 'int64', id: 2 },
+                                uncertainty: { type: 'int32', id: 3 }
                             }
                         },
                         VehiclePosition: {
@@ -216,27 +263,86 @@ async function updateVehicles(source) {
                                 trip: { type: 'TripDescriptor', id: 1 },
                                 vehicle: { type: 'VehicleDescriptor', id: 8 },
                                 position: { type: 'Position', id: 2 },
-                                timestamp: { type: 'uint64', id: 4 },
-                                currentStatus: { type: 'VehicleStopStatus', id: 5 }
+                                currentStopSequence: { type: 'uint32', id: 3 },
+                                stopId: { type: 'string', id: 7 },
+                                currentStatus: { type: 'VehicleStopStatus', id: 4 },
+                                timestamp: { type: 'uint64', id: 5 },
+                                congestionLevel: { type: 'CongestionLevel', id: 6 },
+                                occupancyStatus: { type: 'OccupancyStatus', id: 9 }
+                            }
+                        },
+                        Alert: {
+                            fields: {
+                                activePeriod: { rule: 'repeated', type: 'TimeRange', id: 1 },
+                                informedEntity: { rule: 'repeated', type: 'EntitySelector', id: 5 },
+                                cause: { type: 'Cause', id: 6 },
+                                effect: { type: 'Effect', id: 7 },
+                                url: { type: 'TranslatedString', id: 8 },
+                                headerText: { type: 'TranslatedString', id: 10 },
+                                descriptionText: { type: 'TranslatedString', id: 11 }
+                            }
+                        },
+                        TimeRange: {
+                            fields: {
+                                start: { type: 'uint64', id: 1 },
+                                end: { type: 'uint64', id: 2 }
+                            }
+                        },
+                        EntitySelector: {
+                            fields: {
+                                agencyId: { type: 'string', id: 1 },
+                                routeId: { type: 'string', id: 2 },
+                                routeType: { type: 'int32', id: 3 },
+                                trip: { type: 'TripDescriptor', id: 4 },
+                                stopId: { type: 'string', id: 5 }
+                            }
+                        },
+                        TranslatedString: {
+                            fields: {
+                                translation: { rule: 'repeated', type: 'Translation', id: 1 }
+                            },
+                            nested: {
+                                Translation: {
+                                    fields: {
+                                        text: { type: 'string', id: 1, rule: 'required' },
+                                        language: { type: 'string', id: 2 }
+                                    }
+                                }
                             }
                         },
                         TripDescriptor: {
                             fields: {
                                 tripId: { type: 'string', id: 1 },
-                                routeId: { type: 'string', id: 5 }
+                                routeId: { type: 'string', id: 5 },
+                                directionId: { type: 'uint32', id: 6 },
+                                startTime: { type: 'string', id: 2 },
+                                startDate: { type: 'string', id: 3 },
+                                scheduleRelationship: { type: 'ScheduleRelationship', id: 4 }
+                            },
+                            nested: {
+                                ScheduleRelationship: {
+                                    values: {
+                                        SCHEDULED: 0,
+                                        ADDED: 1,
+                                        UNSCHEDULED: 2,
+                                        CANCELED: 3
+                                    }
+                                }
                             }
                         },
                         VehicleDescriptor: {
                             fields: {
                                 id: { type: 'string', id: 1 },
-                                label: { type: 'string', id: 2 }
+                                label: { type: 'string', id: 2 },
+                                licensePlate: { type: 'string', id: 3 }
                             }
                         },
                         Position: {
                             fields: {
-                                latitude: { type: 'float', id: 1 },
-                                longitude: { type: 'float', id: 2 },
+                                latitude: { type: 'float', id: 1, rule: 'required' },
+                                longitude: { type: 'float', id: 2, rule: 'required' },
                                 bearing: { type: 'float', id: 3 },
+                                odometer: { type: 'double', id: 4 },
                                 speed: { type: 'float', id: 5 }
                             }
                         },
@@ -246,14 +352,77 @@ async function updateVehicles(source) {
                                 STOPPED_AT: 1,
                                 IN_TRANSIT_TO: 2
                             }
+                        },
+                        CongestionLevel: {
+                            values: {
+                                UNKNOWN_CONGESTION_LEVEL: 0,
+                                RUNNING_SMOOTHLY: 1,
+                                STOP_AND_GO: 2,
+                                CONGESTION: 3,
+                                SEVERE_CONGESTION: 4
+                            }
+                        },
+                        OccupancyStatus: {
+                            values: {
+                                EMPTY: 0,
+                                MANY_SEATS_AVAILABLE: 1,
+                                FEW_SEATS_AVAILABLE: 2,
+                                STANDING_ROOM_ONLY: 3,
+                                CRUSHED_STANDING_ROOM_ONLY: 4,
+                                FULL: 5,
+                                NOT_ACCEPTING_PASSENGERS: 6
+                            }
+                        },
+                        Cause: {
+                            values: {
+                                UNKNOWN_CAUSE: 1,
+                                OTHER_CAUSE: 2,
+                                TECHNICAL_PROBLEM: 3,
+                                STRIKE: 4,
+                                DEMONSTRATION: 5,
+                                ACCIDENT: 6,
+                                HOLIDAY: 7,
+                                WEATHER: 8,
+                                MAINTENANCE: 9,
+                                CONSTRUCTION: 10,
+                                POLICE_ACTIVITY: 11,
+                                MEDICAL_EMERGENCY: 12
+                            }
+                        },
+                        Effect: {
+                            values: {
+                                NO_SERVICE: 1,
+                                REDUCED_SERVICE: 2,
+                                SIGNIFICANT_DELAYS: 3,
+                                DETOUR: 4,
+                                ADDITIONAL_SERVICE: 5,
+                                MODIFIED_SERVICE: 6,
+                                OTHER_EFFECT: 7,
+                                UNKNOWN_EFFECT: 8,
+                                STOP_MOVED: 9
+                            }
                         }
                     }
                 }
             }
-        }).lookupType('transit_realtime.FeedMessage');
+        });
+        gtfsrtProto = root.lookupType('transit_realtime.FeedMessage');
+        return gtfsrtProto;
+    }
+}
+
+// Update vehicles from GTFS-RT feed
+async function updateVehicles(source) {
+    if (!source.vehiclePositionUrl) return;
+
+    try {
+        const FeedMessage = await loadGTFSRTProto();
+        const response = await fetch(source.vehiclePositionUrl);
+        const buffer = await response.arrayBuffer();
+        const uint8Array = new Uint8Array(buffer);
 
         const message = FeedMessage.decode(uint8Array);
-        const feedTimestamp = message.header.timestamp;
+        const feedTimestamp = message.header?.timestamp || Date.now() / 1000;
 
         // Update vehicles map
         if (message.entity) {
@@ -269,7 +438,7 @@ async function updateVehicles(source) {
                         bearing: pos.bearing || 0,
                         speed: pos.speed || 0,
                         label: entity.vehicle.vehicle?.label || entity.vehicle.vehicle?.id || vehicleId,
-                        route: entity.vehicle.trip?.routeId,
+                        route: entity.vehicle.trip?.routeId || '',
                         timestamp: entity.vehicle.timestamp || feedTimestamp,
                         color: '#' + source.color
                     });

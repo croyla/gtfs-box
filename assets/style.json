@@ -5,6 +5,7 @@
   "zoom": 14,
   "bearing": 0,
   "pitch": 60,
+  "glyphs": "https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf",
   "fog": {
     "vertical-range": [30, 120],
     "range": [
