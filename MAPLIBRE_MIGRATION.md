@@ -780,14 +780,73 @@ if (map.getLayer('building-models')) {
 
 **Impact:** Eliminates repeated errors during map animation cycles. The building-models layer was used in the original MT3D style for 3D building rendering, but OpenFreeMap uses the standard fill-extrusion layers for 3D buildings instead.
 
+#### 16. Conditional Train/Flight Data Loading - **CRITICAL**
+**File:** `src/map.js` (lines 1131-1155)
+
+**Issue:** Mini Tokyo 3D was attempting to fetch realtime train and flight data from mini-tokyo.appspot.com even when GTFS box only loads bus data. These API calls were failing with CORS errors and 500/503 server errors, which **completely broke the map** and prevented tiles from loading.
+
+**Errors Fixed:**
+- `Access to fetch at 'https://mini-tokyo.appspot.com/traininfo' blocked by CORS policy`
+- `GET https://mini-tokyo.appspot.com/traininfo net::ERR_FAILED 503`
+- `Access to fetch at 'https://mini-tokyo.appspot.com/flight' blocked by CORS policy`
+- `GET https://mini-tokyo.appspot.com/flight net::ERR_FAILED 500`
+- `Access to fetch at 'https://mini-tokyo.appspot.com/atisinfo' blocked by CORS policy`
+- `GET https://mini-tokyo.appspot.com/atisinfo net::ERR_FAILED 500`
+
+**Symptoms caused by these errors:**
+- Map tiles not loading
+- Map controls (zoom, pan) not working
+- Vehicle markers not displaying
+- Map appearing broken after load
+
+**Patch:**
+```javascript
+// Before
+if (me.searchMode === 'none' && me.clockMode === 'realtime' && !me.removing) {
+    me.refreshRealtimeTrainData();
+    me.refreshRealtimeFlightData();
+    me.refreshRealtimeBusData();
+    if (isStation(me.trackedObject)) {
+        me.detailPanel.updateContent();
+    }
+}
+
+// After
+if (me.searchMode === 'none' && me.clockMode === 'realtime' && !me.removing) {
+    // MapLibre compatibility: Wrap in try-catch to prevent CORS/API errors from breaking the map
+    // GTFS box may not have train/flight data, only bus data
+    try {
+        if (me.railways && me.railways.size > 0) {
+            me.refreshRealtimeTrainData();
+        }
+    } catch (e) {
+        console.warn('Failed to refresh train data:', e.message);
+    }
+    try {
+        if (me.airports && me.airports.size > 0) {
+            me.refreshRealtimeFlightData();
+        }
+    } catch (e) {
+        console.warn('Failed to refresh flight data:', e.message);
+    }
+    me.refreshRealtimeBusData();
+    if (isStation(me.trackedObject)) {
+        me.detailPanel.updateContent();
+    }
+}
+```
+
+**Impact:** **MOST CRITICAL FOR GTFS BOX**. Without this patch, failing API calls to mini-tokyo.appspot.com completely break the map initialization. The errors cascade through the system, preventing MapLibre from rendering tiles and enabling user interaction. This patch ensures MT3D only attempts to load data that actually exists, allowing GTFS box to function with only bus data.
+
 ### Summary of All Patches
 
-**Total: 15 patches applied**
+**Total: 16 patches applied**
 
 **Critical patches** (map won't render without these):
 - Patch #0: Import statement fix (mapbox-gl → maplibre-gl)
 - Patch #9: getFreeCameraOptions() fallback - prevents initialization failure
 - Patch #10: Added 'trees' layer - allows MT3D layers to be inserted
+- Patch #16: Conditional train/flight loading - prevents CORS/API errors from breaking the map
 
 **Important patches** (prevents errors and crashes):
 - Patch #1: setLights() compatibility
