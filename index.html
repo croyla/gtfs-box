@@ -57,12 +57,8 @@
 			// Pass through all other requests
 			return originalFetch.apply(this, arguments);
 		};
-	</script>
-	<script src="mini-tokyo-3d.min.js"></script>
-	<!-- <script src="mt3d-plugin-precipitation.min.js"></script> -->
-	<script src="mt3d-plugin-plateau.min.js"></script>
-	<script>
-		// Patch maplibregl.Map to handle MT3D's metadata access patterns
+
+		// Patch maplibregl.Map BEFORE MT3D loads to handle metadata access patterns
 		(function() {
 			const OriginalMap = maplibregl.Map;
 			maplibregl.Map = function(options) {
@@ -139,11 +135,17 @@
 				return map;
 			};
 
-			// Copy static properties
+			// Copy static properties and prototype
 			Object.setPrototypeOf(maplibregl.Map, OriginalMap);
 			Object.setPrototypeOf(maplibregl.Map.prototype, OriginalMap.prototype);
+
+			// Also apply to window.mapboxgl since MT3D uses that
+			window.mapboxgl.Map = maplibregl.Map;
 		})();
 	</script>
+	<script src="mini-tokyo-3d.min.js"></script>
+	<!-- <script src="mt3d-plugin-precipitation.min.js"></script> -->
+	<script src="mt3d-plugin-plateau.min.js"></script>
 </head>
 <body style="width: 100%; height: 100%; margin: 0; padding: 0; position: absolute; overscroll-behavior: none;">
 	<div class="header">
