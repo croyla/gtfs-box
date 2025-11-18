@@ -86,8 +86,40 @@
     // Check after 5 seconds
     setTimeout(() => {
         console.log('--- 5 Second Status Check ---');
-        console.log('Map loaded:', map.loaded());
-        console.log('Style loaded:', map.isStyleLoaded());
+
+        // Check if the underlying MapLibre map exists
+        const innerMap = map.map || map;
+        console.log('MT3D map object:', map);
+        console.log('Inner MapLibre map:', innerMap);
+
+        if (innerMap.loaded) {
+            console.log('Map loaded:', innerMap.loaded());
+        }
+        if (innerMap.isStyleLoaded) {
+            console.log('Style loaded:', innerMap.isStyleLoaded());
+        }
+
+        // Check canvas
+        const canvas = innerMap.getCanvas ? innerMap.getCanvas() : document.querySelector('.mapboxgl-canvas');
+        console.log('Canvas element:', canvas);
+        if (canvas) {
+            console.log('Canvas size:', canvas.width, 'x', canvas.height);
+            console.log('Canvas style:', canvas.style.width, 'x', canvas.style.height);
+        }
+
+        // Check container
+        const container = innerMap.getContainer ? innerMap.getContainer() : document.querySelector('#map');
+        console.log('Container element:', container);
+        if (container) {
+            console.log('Container size:', container.offsetWidth, 'x', container.offsetHeight);
+        }
+
+        // Check map state
+        if (innerMap.getCenter) {
+            console.log('Center:', innerMap.getCenter());
+            console.log('Zoom:', innerMap.getZoom());
+        }
+
         console.log('Total warnings:', warnCount);
     }, 5000);
 </script>

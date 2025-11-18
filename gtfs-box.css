@@ -116,9 +116,20 @@ body {
     width: 100% !important;
     height: 100% !important;
 }
-.content > #map {
-    width: 100%;
-    height: 100%;
+.content > #map,
+.content.mini-tokyo-3d > #map,
+.mini-tokyo-3d #map {
+    width: 100% !important;
+    height: 100% !important;
+}
+/* Ensure MapLibre's canvas container and canvas are full size */
+.mini-tokyo-3d .mapboxgl-canvas-container,
+.mini-tokyo-3d .mapboxgl-canvas {
+    width: 100% !important;
+    height: 100% !important;
+    position: absolute;
+    top: 0;
+    left: 0;
 }
 .route-ctrl {
     height: 100%;
