@@ -226,12 +226,40 @@
 				console.log('[NUCLEAR] Adding getOwnLayer to style on', type);
 				this.style.getOwnLayer = function(id) {
 					console.log('[NUCLEAR] getOwnLayer called for:', id);
+
+					// Try _layers first (should contain the layer right after addLayer)
 					if (this._layers && this._layers[id]) {
 						const layer = this._layers[id];
-						if (!layer.metadata) layer.metadata = {};
+						if (!layer.metadata) {
+							layer.metadata = {};
+						}
 						return layer;
 					}
-					return { id: id, metadata: {} };
+
+					// If not in _layers yet, try to get from map.getLayer
+					// This might happen if called immediately after addLayer
+					const mapLayer = this._map && this._map.getLayer && this._map.getLayer(id);
+					if (mapLayer) {
+						console.log('[NUCLEAR] Found via map.getLayer');
+						if (!mapLayer.metadata) {
+							mapLayer.metadata = {};
+						}
+						return mapLayer;
+					}
+
+					// Last resort: Create a minimal proxy that won't crash
+					// This should rarely happen, but prevents errors
+					console.log('[NUCLEAR] Creating enhanced proxy for:', id);
+					return {
+						id: id,
+						metadata: {},
+						// Stub methods to prevent crashes
+						serialize: function() { return {}; },
+						is3D: function() { return false; },
+						isTileClipped: function() { return true; },
+						hasOffsetProperty: function() { return false; },
+						invalidateCompiledFilter: function() {}
+					};
 				};
 				this.style._getOwnLayerAdded = true;
 			}
@@ -290,11 +318,25 @@
 									return layer;
 								}
 
-								// Create proxy with metadata property
-								console.log('[MT3D-PATCH] Creating proxy layer for:', id);
+								// Try map.getLayer as fallback
+								const mapLayer = this._map && this._map.getLayer && this._map.getLayer(id);
+								if (mapLayer) {
+									console.log('[MT3D-PATCH] Found via map.getLayer');
+									if (!mapLayer.metadata) mapLayer.metadata = {};
+									style._customLayers[id] = mapLayer;
+									return mapLayer;
+								}
+
+								// Create enhanced proxy with stub methods to prevent crashes
+								console.log('[MT3D-PATCH] Creating enhanced proxy for:', id);
 								const proxyLayer = {
 									id: id,
-									metadata: {}
+									metadata: {},
+									serialize: function() { return {}; },
+									is3D: function() { return false; },
+									isTileClipped: function() { return true; },
+									hasOffsetProperty: function() { return false; },
+									invalidateCompiledFilter: function() {}
 								};
 								style._customLayers[id] = proxyLayer;
 								return proxyLayer;
