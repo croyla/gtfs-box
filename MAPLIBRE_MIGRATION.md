@@ -172,9 +172,23 @@ MapLibre GL JS is released under the BSD 3-Clause License.
 
 ## API Compatibility Patches
 
+### Summary
+
+MapLibre GL JS v4.7.1 diverged from Mapbox GL JS v3.x in several ways. **8 critical patches** were required in MT3D source code:
+
+0. **Import Statement** - Changed from 'mapbox-gl' to 'maplibre-gl'
+1. **setLights()** - Feature detection for 3D lighting (Mapbox v3+ only)
+2. **Sky Layer** - Try-catch for sky atmosphere properties
+3. **getOwnLayer()** - Fallback to _layers for layer metadata access
+4. **deck.gl Integration** - Safety checks for __deck timing issues
+5. **Layer Filtering** - Defensive destructuring to handle undefined layers
+6. **Paint Property Errors** - Try-catch for getPaintProperty/setPaintProperty
+7. **getLights()** - Feature detection with default ambient lighting
+8. **TrafficLayer Timing** - Initialization guards for async layer setup
+
 ### MapLibre vs Mapbox API Differences
 
-MapLibre GL JS v4.7.1 diverged from Mapbox GL JS v3.x in several ways. The following patches were required in MT3D source code:
+The following patches were required in MT3D source code:
 
 #### 0. Import Statement (Required for Build) - **CRITICAL**
 **File:** `src/helpers/helpers-mapbox.js:1`
@@ -454,6 +468,57 @@ if (!layer || !layer.paint) {
 ```
 
 **Impact:** Without this patch, the application crashes when the traffic layer tries to determine if the background is dark. The fallback uses standard daytime ambient lighting values (white light at 0.7 intensity).
+
+#### 8. TrafficLayer Initialization Timing - **CRITICAL**
+**File:** `src/layers/traffic-layer.js` (multiple methods)
+
+**Issue:** MapLibre's initialization timing differs from Mapbox, causing methods to be called before the layer's `onAdd()` completes. This results in accessing undefined `computeRenderer`, `context`, or `map` properties.
+
+**Errors Fixed:**
+- `Cannot read properties of undefined (reading 'setTimeOffset')`
+- `Cannot read properties of undefined (reading 'map')`
+- `Cannot read properties of undefined (reading 'getOpacity')`
+- `Cannot destructure property 'renderer' of 'context' as it is undefined`
+
+**Patch (Example - setMode method):**
+```javascript
+// Before
+setMode(viewMode, searchMode) {
+    const me = this,
+        currentOpacity = me.computeRenderer.getOpacity();
+    // ... rest of method
+}
+
+// After
+setMode(viewMode, searchMode) {
+    const me = this;
+
+    // MapLibre compatibility: Check if computeRenderer exists
+    if (!me.computeRenderer) {
+        console.warn('TrafficLayer: computeRenderer not initialized yet');
+        return;
+    }
+
+    const currentOpacity = me.computeRenderer.getOpacity();
+    // ... rest of method
+}
+```
+
+**Methods with added guards:**
+1. `setMode()` - Check computeRenderer before getOpacity()
+2. `refreshDelayMarkers()` - Check map.map before hasDarkBackground()
+3. `setTimeOffset()` - Check computeRenderer before setTimeOffset()
+4. `pickObject()` - Check context/renderer/camera before destructuring
+5. `onRemove()` - Check computeRenderer before dispose()
+6. `prerender()` - Check computeRenderer before compute()
+7. `addObject()` - Check computeRenderer before adding instances
+8. `updateObject()` - Check computeRenderer before updating
+9. `getObjectPosition()` - Return default if computeRenderer missing
+10. `removeObject()` - Return resolved promise if missing
+11. `markObject()` - Check computeRenderer before setMarked()
+12. `trackObject()` - Check computeRenderer before setTracked()
+
+**Impact:** CRITICAL for map functionality. Without these checks, the map crashes during initialization when methods are called before the layer is fully initialized. The console warnings help debug initialization order issues.
 
 ### Applying Patches
 
