@@ -1,51 +1,44 @@
+diff --git a/src/helpers/helpers-mapbox.js b/src/helpers/helpers-mapbox.js
+index ea94d47..be4c487 100644
 --- a/src/helpers/helpers-mapbox.js
 +++ b/src/helpers/helpers-mapbox.js
-@@ -220,17 +220,28 @@ export function setSunlight(map, time) {
+@@ -220,26 +220,36 @@ export function setSunlight(map, time) {
          };
      }
-
+ 
 -    map.setLights([{
--        id: 'ambient',
--        type: 'ambient',
--        properties: {
++    // MapLibre GL JS does not support setLights (Mapbox v3+ feature)
++    if (typeof map.setLights === 'function') {
++        map.setLights([{
+         id: 'ambient',
+         type: 'ambient',
+         properties: {
 -            color: `rgb(${ambient.r}, ${ambient.g}, ${ambient.b})`,
 -            intensity: ambient.i
--        }
++        color: `rgb(${ambient.r}, ${ambient.g}, ${ambient.b})`,
++        intensity: ambient.i
+         }
 -    }, {
--        id: 'directional',
--        type: 'directional',
--        properties: {
++        }, {
+         id: 'directional',
+         type: 'directional',
+         properties: {
 -            direction: ['literal', [sun.azimuth, sun.altitude]],
 -            color: `rgb(${directional.r}, ${directional.g}, ${directional.b})`,
 -            intensity: directional.i,
 -            'cast-shadows': true,
 -            'shadow-intensity': directional.w
--        }
++        direction: ['literal', [sun.azimuth, sun.altitude]],
++        color: `rgb(${directional.r}, ${directional.g}, ${directional.b})`,
++        intensity: directional.i,
++        'cast-shadows': true,
++        'shadow-intensity': directional.w
+         }
 -    }]);
--
--    map.setPaintProperty('sky', 'sky-atmosphere-sun', [sunAzimuth, sunAltitude]);
-+    // MapLibre GL JS does not support setLights (Mapbox v3+ feature)
-+    if (typeof map.setLights === 'function') {
-+        map.setLights([{
-+            id: 'ambient',
-+            type: 'ambient',
-+            properties: {
-+                color: `rgb(${ambient.r}, ${ambient.g}, ${ambient.b})`,
-+                intensity: ambient.i
-+            }
-+        }, {
-+            id: 'directional',
-+            type: 'directional',
-+            properties: {
-+                direction: ['literal', [sun.azimuth, sun.altitude]],
-+                color: `rgb(${directional.r}, ${directional.g}, ${directional.b})`,
-+                intensity: directional.i,
-+                'cast-shadows': true,
-+                'shadow-intensity': directional.w
-+            }
 +        }]);
 +    }
-+
+ 
+-    map.setPaintProperty('sky', 'sky-atmosphere-sun', [sunAzimuth, sunAltitude]);
 +    // MapLibre may not have 'sky' layer
 +    try {
 +        if (map.getLayer('sky')) {
@@ -54,4 +47,35 @@
 +    } catch (e) {
 +        // Sky layer not available in MapLibre
 +    }
+ }
+ 
+ /**
+@@ -259,7 +269,9 @@ export function hasDarkBackground(map, actual) {
+ 
+     if (actual) {
+         return BG_LAYER_IDS.reduce((value, id) => {
+-            const paintProperties = map.style.getOwnLayer(id).paint,
++            // MapLibre doesn't have getOwnLayer - use _layers directly
++            const layer = map.style.getOwnLayer ? map.style.getOwnLayer(id) : map.style._layers[id];
++            const paintProperties = layer.paint,
+                 {r, g, b} = paintProperties.get('background-color'),
+                 a = paintProperties.get('background-opacity');
+             return value + luminance({r: r * lr * a, g: g * lg * a, b: b * lb * a});
+diff --git a/src/layers/geojson-layer.js b/src/layers/geojson-layer.js
+index 0c7eac1..547b145 100644
+--- a/src/layers/geojson-layer.js
++++ b/src/layers/geojson-layer.js
+@@ -22,7 +22,12 @@ export default class {
+ 
+         mbox.addLayer(new MapboxLayer(options), beforeId || 'poi');
+         mbox.setLayerZoomRange(id, implementation.minzoom, implementation.maxzoom);
+-        mbox.style.getOwnLayer(id).metadata = implementation.metadata;
++
++        // MapLibre doesn't have getOwnLayer - use _layers directly
++        const layer = mbox.style.getOwnLayer ? mbox.style.getOwnLayer(id) : mbox.style._layers[id];
++        if (layer) {
++            layer.metadata = implementation.metadata;
++        }
+     }
+ 
  }

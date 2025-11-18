@@ -216,6 +216,36 @@ try {
 
 **Impact:** Sky atmosphere effects degrade gracefully if not supported.
 
+#### 3. getOwnLayer() Method (Not Available in MapLibre) - **CRITICAL**
+**Files:**
+- `src/layers/geojson-layer.js:25`
+- `src/helpers/helpers-mapbox.js:272`
+
+**Issue:** MapLibre doesn't have the `style.getOwnLayer()` method. MT3D uses this to access layer objects and set metadata. Without this patch, the map fails to load with `TypeError: Cannot set properties of undefined (setting 'metadata')`.
+
+**Patch:**
+```javascript
+// Before (geojson-layer.js)
+mbox.style.getOwnLayer(id).metadata = implementation.metadata;
+
+// After
+const layer = mbox.style.getOwnLayer ? mbox.style.getOwnLayer(id) : mbox.style._layers[id];
+if (layer) {
+    layer.metadata = implementation.metadata;
+}
+```
+
+```javascript
+// Before (helpers-mapbox.js)
+const paintProperties = map.style.getOwnLayer(id).paint,
+
+// After
+const layer = map.style.getOwnLayer ? map.style.getOwnLayer(id) : map.style._layers[id];
+const paintProperties = layer.paint,
+```
+
+**Impact:** This is the most critical patch. Without it, the map will not load at all. The fallback uses MapLibre's internal `_layers` object to access layer data directly.
+
 ### Applying Patches
 
 The patch file `mt3d-maplibre.patch` contains all required changes. To apply:
