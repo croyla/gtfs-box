@@ -6312,6 +6312,17 @@
         "text-halo-color": "#fff",
         "text-halo-width": 1
       }
+    },
+    {
+      "id": "poi",
+      "type": "circle",
+      "source": "openmaptiles",
+      "source-layer": "poi",
+      "minzoom": 14,
+      "paint": {
+        "circle-radius": 0,
+        "circle-opacity": 0
+      }
     }
   ],
   "name": "Mini Tokyo 3D - OpenFreeMap",
