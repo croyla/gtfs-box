@@ -563,7 +563,7 @@ if (!matchGtfsUrl && initialIndex === 0) {
         color: `#${firstSource.color}`
     }];
     if (options.zoom === undefined) options.zoom = firstSource.zoom;
-    if (options.center === undefined) options.center = [firstSource.center[1], firstSource.center[0]];
+    if (options.center === undefined) options.center = firstSource.center;
     if (options.bearing === undefined) options.bearing = firstSource.bearing;
     if (options.pitch === undefined) options.pitch = firstSource.pitch;
 }
