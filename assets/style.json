@@ -92,57 +92,14 @@
         "star-intensity": 0.4
     },
     "sources": {
-        "mapbox": {
+        "openmaptiles": {
             "type": "vector",
-            "url": "mapbox://mapbox.mapbox-streets-v8,mapbox.mapbox-models-v1,mapbox.road-detail-v1"
-        },
-        "3dbuildings": {
-            "url": "mapbox://mapbox.mapbox-3dbuildings-v1",
-            "type": "batched-model",
-            "data": {
-                "attribution": "<a href=\"https://www.mapbox.com/about/maps/\" target=\"_blank\" title=\"Mapbox\" aria-label=\"Mapbox\">&copy; Mapbox</a>",
-                "bounds": [
-                    -180,
-                    -85,
-                    180,
-                    85
-                ],
-                "capabilities": [
-                    "draco"
-                ],
-                "center": [
-                    0,
-                    0,
-                    3
-                ],
-                "created": 1683634017088,
-                "description": "Public tileset - Mapbox 3D buildings",
-                "format": "glb",
-                "id": "mapbox.mapbox-3dbuildings-v1",
-                "mapbox_logo": true,
-                "maxzoom": 14,
-                "minzoom": 14,
-                "modified": 1719240021306,
-                "name": "Mapbox 3D landmark buildings v1",
-                "private": false,
-                "scheme": "xyz",
-                "tilejson": "3.0.0",
-                "tiles": [
-                    "https://a.tiles.mapbox.com/3dtiles/v1/mapbox.mapbox-3dbuildings-v1/{z}/{x}/{y}.glb?access_token=pk.eyJ1Ijoic3RhbGRlcnN0dWRpb3MiLCJhIjoiY2t1aGNvbGZrMDYzbzJwcXR1MnV3OHJjcyJ9.PjtWPX7thqnh62jy7qNYaA",
-                    "https://b.tiles.mapbox.com/3dtiles/v1/mapbox.mapbox-3dbuildings-v1/{z}/{x}/{y}.glb?access_token=pk.eyJ1Ijoic3RhbGRlcnN0dWRpb3MiLCJhIjoiY2t1aGNvbGZrMDYzbzJwcXR1MnV3OHJjcyJ9.PjtWPX7thqnh62jy7qNYaA"
-                ],
-                "variants": [
-                    {
-                        "capabilities": [
-                            "meshopt"
-                        ],
-                        "tiles": [
-                            "mapbox://3dtiles/mapbox.mapbox-3dbuildings-v1-meshopt/{z}/{x}/{y}.glb"
-                        ]
-                    }
-                ],
-                "webpage": "https://studio.mapbox.com/tilesets/mapbox.mapbox-3dbuildings-v1"
-            }
+            "tiles": [
+                "https://tiles.openfreemap.org/planet/{z}/{x}/{y}.pbf"
+            ],
+            "minzoom": 0,
+            "maxzoom": 14,
+            "attribution": "© <a href=\"https://www.openstreetmap.org/copyright\" target=\"_blank\">OpenStreetMap</a> contributors, <a href=\"https://openfreemap.org/\" target=\"_blank\">OpenFreeMap</a>"
         },
         "natural_earth_shaded_relief": {
             "maxzoom": 6,
@@ -153,8 +110,8 @@
             "type": "raster"
         }
     },
-    "sprite": "mapbox://sprites/mapbox/streets-v12",
-    "glyphs": "mapbox://fonts/mapbox/{fontstack}/{range}.pbf",
+    "sprite": "https://tiles.openfreemap.org/styles/liberty/sprite",
+    "glyphs": "https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf",
     "layers": [
         {
             "id": "background",
@@ -209,7 +166,7 @@
         {
             "id": "park",
             "type": "fill",
-            "source": "mapbox",
+            "source": "openmaptiles",
             "source-layer": "landuse",
             "filter": [
                 "==",
@@ -232,7 +189,7 @@
         {
             "id": "park_outline",
             "type": "line",
-            "source": "mapbox",
+            "source": "openmaptiles",
             "source-layer": "landuse",
             "layout": {},
             "filter": [
@@ -259,7 +216,7 @@
         {
             "id": "landuse_residential",
             "type": "fill",
-            "source": "mapbox",
+            "source": "openmaptiles",
             "source-layer": "landuse",
             "maxzoom": 8,
             "filter": [
@@ -296,7 +253,7 @@
         {
             "id": "landcover_wood",
             "type": "fill",
-            "source": "mapbox",
+            "source": "openmaptiles",
             "source-layer": "landuse",
             "filter": [
                 "all",
@@ -322,7 +279,7 @@
         {
             "id": "landcover_grass",
             "type": "fill",
-            "source": "mapbox",
+            "source": "openmaptiles",
             "source-layer": "landuse",
             "filter": [
                 "any",
@@ -361,7 +318,7 @@
         {
             "id": "landuse_cemetery",
             "type": "fill",
-            "source": "mapbox",
+            "source": "openmaptiles",
             "source-layer": "landuse",
             "filter": [
                 "==",
@@ -385,7 +342,7 @@
         {
             "id": "landuse_hospital",
             "type": "fill",
-            "source": "mapbox",
+            "source": "openmaptiles",
             "source-layer": "landuse",
             "filter": [
                 "==",
@@ -406,7 +363,7 @@
         {
             "id": "landuse_school",
             "type": "fill",
-            "source": "mapbox",
+            "source": "openmaptiles",
             "source-layer": "landuse",
             "filter": [
                 "==",
@@ -427,7 +384,7 @@
         {
             "id": "waterway_river",
             "type": "line",
-            "source": "mapbox",
+            "source": "openmaptiles",
             "source-layer": "waterway",
             "filter": [
                 "==",
@@ -465,7 +422,7 @@
         {
             "id": "waterway_other",
             "type": "line",
-            "source": "mapbox",
+            "source": "openmaptiles",
             "source-layer": "waterway",
             "filter": [
                 "all",
@@ -506,7 +463,7 @@
         {
             "id": "water",
             "type": "fill",
-            "source": "mapbox",
+            "source": "openmaptiles",
             "source-layer": "water",
             "paint": {
                 "fill-color": "rgba(158, 189, 255, 1)"
@@ -522,7 +479,7 @@
         {
             "id": "landcover_sand",
             "type": "fill",
-            "source": "mapbox",
+            "source": "openmaptiles",
             "source-layer": "landuse",
             "filter": [
                 "all",
@@ -546,7 +503,7 @@
         {
             "id": "aeroway_fill",
             "type": "fill",
-            "source": "mapbox",
+            "source": "openmaptiles",
             "source-layer": "landuse",
             "minzoom": 11,
             "filter": [
@@ -577,7 +534,7 @@
         {
             "id": "aeroway_runway",
             "type": "line",
-            "source": "mapbox",
+            "source": "openmaptiles",
             "source-layer": "aeroway",
             "minzoom": 9,
             "filter": [
@@ -621,7 +578,7 @@
         {
             "id": "aeroway_taxiway",
             "type": "line",
-            "source": "mapbox",
+            "source": "openmaptiles",
             "source-layer": "aeroway",
             "minzoom": 9,
             "filter": [
@@ -665,7 +622,7 @@
         {
             "id": "tunnel_motorway_link_casing",
             "type": "line",
-            "source": "mapbox",
+            "source": "openmaptiles",
             "source-layer": "road",
             "filter": [
                 "all",
@@ -746,7 +703,7 @@
         {
             "id": "tunnel_service_track_casing",
             "type": "line",
-            "source": "mapbox",
+            "source": "openmaptiles",
             "source-layer": "road",
             "filter": [
                 "all",
@@ -828,7 +785,7 @@
         {
             "id": "tunnel_link_casing",
             "type": "line",
-            "source": "mapbox",
+            "source": "openmaptiles",
             "source-layer": "road",
             "filter": [
                 "all",
@@ -911,7 +868,7 @@
         {
             "id": "tunnel_street_casing",
             "type": "line",
-            "source": "mapbox",
+            "source": "openmaptiles",
             "source-layer": "road",
             "filter": [
                 "all",
@@ -1003,7 +960,7 @@
         {
             "id": "tunnel_secondary_tertiary_casing",
             "type": "line",
-            "source": "mapbox",
+            "source": "openmaptiles",
             "source-layer": "road",
             "filter": [
                 "all",
@@ -1080,7 +1037,7 @@
         {
             "id": "tunnel_trunk_primary_casing",
             "type": "line",
-            "source": "mapbox",
+            "source": "openmaptiles",
             "source-layer": "road",
             "filter": [
                 "all",
@@ -1160,7 +1117,7 @@
         {
             "id": "tunnel_motorway_casing",
             "type": "line",
-            "source": "mapbox",
+            "source": "openmaptiles",
             "source-layer": "road",
             "filter": [
                 "all",
@@ -1240,7 +1197,7 @@
         {
             "id": "tunnel_path_pedestrian",
             "type": "line",
-            "source": "mapbox",
+            "source": "openmaptiles",
             "source-layer": "road",
             "filter": [
                 "all",
@@ -1324,7 +1281,7 @@
         {
             "id": "tunnel_motorway_link",
             "type": "line",
-            "source": "mapbox",
+            "source": "openmaptiles",
             "source-layer": "road",
             "filter": [
                 "all",
@@ -1400,7 +1357,7 @@
         {
             "id": "tunnel_service_track",
             "type": "line",
-            "source": "mapbox",
+            "source": "openmaptiles",
             "source-layer": "road",
             "filter": [
                 "all",
@@ -1478,7 +1435,7 @@
         {
             "id": "tunnel_link",
             "type": "line",
-            "source": "mapbox",
+            "source": "openmaptiles",
             "source-layer": "road",
             "filter": [
                 "all",
@@ -1560,7 +1517,7 @@
         {
             "id": "tunnel_minor",
             "type": "line",
-            "source": "mapbox",
+            "source": "openmaptiles",
             "source-layer": "road",
             "filter": [
                 "all",
@@ -1639,7 +1596,7 @@
         {
             "id": "tunnel_secondary_tertiary",
             "type": "line",
-            "source": "mapbox",
+            "source": "openmaptiles",
             "source-layer": "road",
             "filter": [
                 "all",
@@ -1717,7 +1674,7 @@
         {
             "id": "tunnel_trunk_primary",
             "type": "line",
-            "source": "mapbox",
+            "source": "openmaptiles",
             "source-layer": "road",
             "filter": [
                 "all",
@@ -1795,7 +1752,7 @@
         {
             "id": "tunnel_motorway",
             "type": "line",
-            "source": "mapbox",
+            "source": "openmaptiles",
             "source-layer": "road",
             "filter": [
                 "all",
@@ -1869,7 +1826,7 @@
         {
             "id": "tunnel_major_rail",
             "type": "line",
-            "source": "mapbox",
+            "source": "openmaptiles",
             "source-layer": "road",
             "filter": [
                 "all",
@@ -1914,7 +1871,7 @@
         {
             "id": "tunnel_major_rail_hatching",
             "type": "line",
-            "source": "mapbox",
+            "source": "openmaptiles",
             "source-layer": "road",
             "filter": [
                 "all",
@@ -1963,7 +1920,7 @@
         {
             "id": "tunnel_transit_rail",
             "type": "line",
-            "source": "mapbox",
+            "source": "openmaptiles",
             "source-layer": "road",
             "filter": [
                 "all",
@@ -2009,7 +1966,7 @@
         {
             "id": "tunnel_transit_rail_hatching",
             "type": "line",
-            "source": "mapbox",
+            "source": "openmaptiles",
             "source-layer": "road",
             "filter": [
                 "all",
@@ -2059,7 +2016,7 @@
         {
             "id": "road_area_pattern",
             "type": "fill",
-            "source": "mapbox",
+            "source": "openmaptiles",
             "source-layer": "road",
             "filter": [
                 "all",
@@ -2086,7 +2043,7 @@
         {
             "id": "road_path_pedestrian",
             "type": "line",
-            "source": "mapbox",
+            "source": "openmaptiles",
             "source-layer": "road",
             "minzoom": 14,
             "filter": [
@@ -2140,7 +2097,7 @@
         {
             "id": "road_motorway_link_casing",
             "type": "line",
-            "source": "mapbox",
+            "source": "openmaptiles",
             "source-layer": "road",
             "minzoom": 12,
             "filter": [
@@ -2223,7 +2180,7 @@
         {
             "id": "road_service_track_casing",
             "type": "line",
-            "source": "mapbox",
+            "source": "openmaptiles",
             "source-layer": "road",
             "filter": [
                 "all",
@@ -2307,7 +2264,7 @@
         {
             "id": "road_link_casing",
             "type": "line",
-            "source": "mapbox",
+            "source": "openmaptiles",
             "source-layer": "road",
             "minzoom": 13,
             "filter": [
@@ -2398,7 +2355,7 @@
         {
             "id": "road_minor_casing",
             "type": "line",
-            "source": "mapbox",
+            "source": "openmaptiles",
             "source-layer": "road",
             "filter": [
                 "all",
@@ -2511,7 +2468,7 @@
         {
             "id": "road_secondary_tertiary_casing",
             "type": "line",
-            "source": "mapbox",
+            "source": "openmaptiles",
             "source-layer": "road",
             "filter": [
                 "all",
@@ -2603,7 +2560,7 @@
         {
             "id": "road_trunk_primary_casing",
             "type": "line",
-            "source": "mapbox",
+            "source": "openmaptiles",
             "source-layer": "road",
             "filter": [
                 "all",
@@ -2691,7 +2648,7 @@
         {
             "id": "road_motorway_casing",
             "type": "line",
-            "source": "mapbox",
+            "source": "openmaptiles",
             "source-layer": "road",
             "minzoom": 5,
             "filter": [
@@ -2782,7 +2739,7 @@
         {
             "id": "road_motorway_link",
             "type": "line",
-            "source": "mapbox",
+            "source": "openmaptiles",
             "source-layer": "road",
             "minzoom": 12,
             "filter": [
@@ -2865,7 +2822,7 @@
         {
             "id": "road_service_track",
             "type": "line",
-            "source": "mapbox",
+            "source": "openmaptiles",
             "source-layer": "road",
             "filter": [
                 "all",
@@ -2949,7 +2906,7 @@
         {
             "id": "road_minor",
             "type": "line",
-            "source": "mapbox",
+            "source": "openmaptiles",
             "source-layer": "road",
             "filter": [
                 "all",
@@ -3041,7 +2998,7 @@
         {
             "id": "road_link",
             "type": "line",
-            "source": "mapbox",
+            "source": "openmaptiles",
             "source-layer": "road",
             "minzoom": 13,
             "filter": [
@@ -3131,7 +3088,7 @@
         {
             "id": "road_secondary_tertiary",
             "type": "line",
-            "source": "mapbox",
+            "source": "openmaptiles",
             "source-layer": "road",
             "filter": [
                 "all",
@@ -3216,7 +3173,7 @@
         {
             "id": "road_trunk_primary",
             "type": "line",
-            "source": "mapbox",
+            "source": "openmaptiles",
             "source-layer": "road",
             "filter": [
                 "all",
@@ -3301,7 +3258,7 @@
         {
             "id": "road_motorway",
             "type": "line",
-            "source": "mapbox",
+            "source": "openmaptiles",
             "source-layer": "road",
             "minzoom": 5,
             "filter": [
@@ -3402,7 +3359,7 @@
         {
             "id": "road-detail-shape-polygon",
             "type": "fill",
-            "source": "mapbox",
+            "source": "openmaptiles",
             "source-layer": "road_detail_shape",
             "minzoom": 15,
             "filter": [
@@ -3549,7 +3506,7 @@
         {
             "id": "road-detail-shape-lines",
             "type": "line",
-            "source": "mapbox",
+            "source": "openmaptiles",
             "source-layer": "road_detail_shape",
             "minzoom": 15,
             "filter": [
@@ -3636,7 +3593,7 @@
         {
             "id": "road_major_rail",
             "type": "line",
-            "source": "mapbox",
+            "source": "openmaptiles",
             "source-layer": "road",
             "filter": [
                 "all",
@@ -3682,7 +3639,7 @@
         {
             "id": "road_major_rail_hatching",
             "type": "line",
-            "source": "mapbox",
+            "source": "openmaptiles",
             "source-layer": "road",
             "filter": [
                 "all",
@@ -3732,7 +3689,7 @@
         {
             "id": "road_transit_rail",
             "type": "line",
-            "source": "mapbox",
+            "source": "openmaptiles",
             "source-layer": "road",
             "filter": [
                 "all",
@@ -3779,7 +3736,7 @@
         {
             "id": "road_transit_rail_hatching",
             "type": "line",
-            "source": "mapbox",
+            "source": "openmaptiles",
             "source-layer": "road",
             "filter": [
                 "all",
@@ -3830,7 +3787,7 @@
         {
             "id": "bridge_motorway_link_casing",
             "type": "line",
-            "source": "mapbox",
+            "source": "openmaptiles",
             "source-layer": "road",
             "filter": [
                 "all",
@@ -3906,7 +3863,7 @@
         {
             "id": "bridge_service_track_casing",
             "type": "line",
-            "source": "mapbox",
+            "source": "openmaptiles",
             "source-layer": "road",
             "filter": [
                 "all",
@@ -3984,7 +3941,7 @@
         {
             "id": "bridge_link_casing",
             "type": "line",
-            "source": "mapbox",
+            "source": "openmaptiles",
             "source-layer": "road",
             "filter": [
                 "all",
@@ -4067,7 +4024,7 @@
         {
             "id": "bridge_street_casing",
             "type": "line",
-            "source": "mapbox",
+            "source": "openmaptiles",
             "source-layer": "road",
             "filter": [
                 "all",
@@ -4159,7 +4116,7 @@
         {
             "id": "bridge_path_pedestrian_casing",
             "type": "line",
-            "source": "mapbox",
+            "source": "openmaptiles",
             "source-layer": "road",
             "filter": [
                 "all",
@@ -4247,7 +4204,7 @@
         {
             "id": "bridge_secondary_tertiary_casing",
             "type": "line",
-            "source": "mapbox",
+            "source": "openmaptiles",
             "source-layer": "road",
             "filter": [
                 "all",
@@ -4324,7 +4281,7 @@
         {
             "id": "bridge_trunk_primary_casing",
             "type": "line",
-            "source": "mapbox",
+            "source": "openmaptiles",
             "source-layer": "road",
             "filter": [
                 "all",
@@ -4404,7 +4361,7 @@
         {
             "id": "bridge_motorway_casing",
             "type": "line",
-            "source": "mapbox",
+            "source": "openmaptiles",
             "source-layer": "road",
             "filter": [
                 "all",
@@ -4479,7 +4436,7 @@
         {
             "id": "bridge_path_pedestrian",
             "type": "line",
-            "source": "mapbox",
+            "source": "openmaptiles",
             "source-layer": "road",
             "filter": [
                 "all",
@@ -4563,7 +4520,7 @@
         {
             "id": "bridge_motorway_link",
             "type": "line",
-            "source": "mapbox",
+            "source": "openmaptiles",
             "source-layer": "road",
             "filter": [
                 "all",
@@ -4638,7 +4595,7 @@
         {
             "id": "bridge_service_track",
             "type": "line",
-            "source": "mapbox",
+            "source": "openmaptiles",
             "source-layer": "road",
             "filter": [
                 "all",
@@ -4716,7 +4673,7 @@
         {
             "id": "bridge_link",
             "type": "line",
-            "source": "mapbox",
+            "source": "openmaptiles",
             "source-layer": "road",
             "filter": [
                 "all",
@@ -4798,7 +4755,7 @@
         {
             "id": "bridge_street",
             "type": "line",
-            "source": "mapbox",
+            "source": "openmaptiles",
             "source-layer": "road",
             "filter": [
                 "all",
@@ -4877,7 +4834,7 @@
         {
             "id": "bridge_secondary_tertiary",
             "type": "line",
-            "source": "mapbox",
+            "source": "openmaptiles",
             "source-layer": "road",
             "filter": [
                 "all",
@@ -4955,7 +4912,7 @@
         {
             "id": "bridge_trunk_primary",
             "type": "line",
-            "source": "mapbox",
+            "source": "openmaptiles",
             "source-layer": "road",
             "filter": [
                 "all",
@@ -5033,7 +4990,7 @@
         {
             "id": "bridge_motorway",
             "type": "line",
-            "source": "mapbox",
+            "source": "openmaptiles",
             "source-layer": "road",
             "filter": [
                 "all",
@@ -5106,7 +5063,7 @@
         {
             "id": "bridge_major_rail",
             "type": "line",
-            "source": "mapbox",
+            "source": "openmaptiles",
             "source-layer": "road",
             "filter": [
                 "all",
@@ -5151,7 +5108,7 @@
         {
             "id": "bridge_major_rail_hatching",
             "type": "line",
-            "source": "mapbox",
+            "source": "openmaptiles",
             "source-layer": "road",
             "filter": [
                 "all",
@@ -5200,7 +5157,7 @@
         {
             "id": "bridge_transit_rail",
             "type": "line",
-            "source": "mapbox",
+            "source": "openmaptiles",
             "source-layer": "road",
             "filter": [
                 "all",
@@ -5246,7 +5203,7 @@
         {
             "id": "bridge_transit_rail_hatching",
             "type": "line",
-            "source": "mapbox",
+            "source": "openmaptiles",
             "source-layer": "road",
             "filter": [
                 "all",
@@ -5296,7 +5253,7 @@
         {
             "id": "building-underground",
             "type": "fill",
-            "source": "mapbox",
+            "source": "openmaptiles",
             "source-layer": "building",
             "minzoom": 14.5,
             "filter": [
@@ -5358,7 +5315,7 @@
         {
             "id": "building-underground-underground",
             "type": "fill",
-            "source": "mapbox",
+            "source": "openmaptiles",
             "source-layer": "building",
             "minzoom": 14.5,
             "filter": [
@@ -5420,7 +5377,7 @@
         {
             "id": "building",
             "type": "fill",
-            "source": "mapbox",
+            "source": "openmaptiles",
             "source-layer": "building",
             "filter": [
                 "all",
@@ -5480,7 +5437,7 @@
                 "mt3d:opacity-underground": 0.0625,
                 "mt3d:opacity-underground-route": 0.025
             },
-            "source": "mapbox",
+            "source": "openmaptiles",
             "source-layer": "tree",
             "minzoom": 15,
             "layout": {
@@ -5915,7 +5872,7 @@
                 "mt3d:opacity-underground": 0.0625,
                 "mt3d:opacity-underground-route": 0.025
             },
-            "source": "mapbox",
+            "source": "openmaptiles",
             "source-layer": "wind_turbine",
             "minzoom": 15,
             "paint": {
@@ -5962,7 +5919,7 @@
                 "mt3d:opacity-underground": 0.0625,
                 "mt3d:opacity-underground-route": 0.025
             },
-            "source": "mapbox",
+            "source": "openmaptiles",
             "source-layer": "wind_turbine",
             "minzoom": 15,
             "layout": {
@@ -6007,7 +5964,7 @@
                 "mt3d:opacity-underground": 0.0625,
                 "mt3d:opacity-underground-route": 0.025
             },
-            "source": "mapbox",
+            "source": "openmaptiles",
             "source-layer": "wind_turbine",
             "minzoom": 15,
             "layout": {
@@ -6085,7 +6042,7 @@
         {
             "id": "3d-building",
             "type": "fill-extrusion",
-            "source": "mapbox",
+            "source": "openmaptiles",
             "source-layer": "building",
             "minzoom": 15,
             "filter": [
@@ -6385,341 +6342,9 @@
             }
         },
         {
-            "id": "building-models",
-            "type": "model",
-            "metadata": {
-                "mt3d:opacity-effect": true,
-                "mt3d:opacity": 1,
-                "mt3d:opacity-route": 0.1,
-                "mt3d:opacity-underground": 0.0625,
-                "mt3d:opacity-underground-route": 0.025
-            },
-            "source": "3dbuildings",
-            "minzoom": 13.7,
-            "paint": {
-                "model-ambient-occlusion-intensity": 0.75,
-                "model-color": [
-                    "match",
-                    [
-                        "get",
-                        "part"
-                    ],
-                    "roof",
-                    [
-                        "hsl",
-                        22,
-                        82,
-                        90
-                    ],
-                    "wall",
-                    [
-                        "interpolate",
-                        [
-                            "linear"
-                        ],
-                        [
-                            "measure-light",
-                            "brightness"
-                        ],
-                        0,
-                        [
-                            "hsl",
-                            29,
-                            93,
-                            77
-                        ],
-                        0.2,
-                        [
-                            "hsl",
-                            0,
-                            0,
-                            100
-                        ]
-                    ],
-                    "window",
-                    [
-                        "interpolate",
-                        [
-                            "linear"
-                        ],
-                        [
-                            "measure-light",
-                            "brightness"
-                        ],
-                        0,
-                        [
-                            "hsl",
-                            [
-                                "random",
-                                0,
-                                90,
-                                [
-                                    "id"
-                                ]
-                            ],
-                            [
-                                "random",
-                                20,
-                                100,
-                                [
-                                    "id"
-                                ]
-                            ],
-                            87
-                        ],
-                        0.15,
-                        [
-                            "hsl",
-                            [
-                                "random",
-                                200,
-                                215,
-                                [
-                                    "id"
-                                ]
-                            ],
-                            100,
-                            [
-                                "random",
-                                70,
-                                80,
-                                [
-                                    "id"
-                                ]
-                            ]
-                        ]
-                    ],
-                    [
-                        "interpolate",
-                        [
-                            "linear"
-                        ],
-                        [
-                            "measure-light",
-                            "brightness"
-                        ],
-                        0.16,
-                        [
-                            "hsla",
-                            [
-                                "random",
-                                10,
-                                70,
-                                [
-                                    "id"
-                                ]
-                            ],
-                            55,
-                            [
-                                "random",
-                                80,
-                                90,
-                                [
-                                    "id"
-                                ]
-                            ],
-                            1
-                        ],
-                        0.4,
-                        "hsl(0, 100%, 100%)"
-                    ]
-                ],
-                "model-color-mix-intensity": [
-                    "match",
-                    [
-                        "get",
-                        "part"
-                    ],
-                    "logo",
-                    [
-                        "interpolate",
-                        [
-                            "linear"
-                        ],
-                        [
-                            "measure-light",
-                            "brightness"
-                        ],
-                        0.2,
-                        0,
-                        0.4,
-                        0.3
-                    ],
-                    1
-                ],
-                "model-emissive-strength": [
-                    "match",
-                    [
-                        "get",
-                        "part"
-                    ],
-                    "door",
-                    [
-                        "interpolate",
-                        [
-                            "linear"
-                        ],
-                        [
-                            "measure-light",
-                            "brightness"
-                        ],
-                        0.2,
-                        1.5,
-                        0.4,
-                        2.5
-                    ],
-                    "logo",
-                    0.6,
-                    "wall",
-                    [
-                        "interpolate",
-                        [
-                            "linear"
-                        ],
-                        [
-                            "measure-light",
-                            "brightness"
-                        ],
-                        0.45,
-                        0.1,
-                        0.5,
-                        0.8
-                    ],
-                    "window",
-                    [
-                        "interpolate",
-                        [
-                            "linear"
-                        ],
-                        [
-                            "measure-light",
-                            "brightness"
-                        ],
-                        0.2,
-                        [
-                            "random",
-                            0.5,
-                            0.8,
-                            [
-                                "id"
-                            ]
-                        ],
-                        0.4,
-                        0.4
-                    ],
-                    0
-                ],
-                "model-height-based-emissive-strength-multiplier": [
-                    "match",
-                    [
-                        "get",
-                        "part"
-                    ],
-                    "wall",
-                    [
-                        "interpolate",
-                        [
-                            "linear"
-                        ],
-                        [
-                            "measure-light",
-                            "brightness"
-                        ],
-                        0.2,
-                        [
-                            "literal",
-                            [
-                                0.5,
-                                0,
-                                0,
-                                1,
-                                0.8
-                            ]
-                        ],
-                        0.4,
-                        [
-                            "literal",
-                            [
-                                0,
-                                1,
-                                0,
-                                1,
-                                0.6
-                            ]
-                        ]
-                    ],
-                    "window",
-                    [
-                        "literal",
-                        [
-                            0,
-                            0.9,
-                            0,
-                            1,
-                            0.5
-                        ]
-                    ],
-                    [
-                        "literal",
-                        [
-                            1,
-                            1,
-                            1,
-                            1,
-                            1
-                        ]
-                    ]
-                ],
-                "model-opacity": [
-                    "interpolate",
-                    [
-                        "linear"
-                    ],
-                    [
-                        "zoom"
-                    ],
-                    13.7,
-                    0,
-                    14,
-                    0.85
-                ],
-                "model-roughness": [
-                    "match",
-                    [
-                        "get",
-                        "part"
-                    ],
-                    "window",
-                    0,
-                    1
-                ],
-                "model-scale": [
-                    "interpolate",
-                    [
-                        "linear"
-                    ],
-                    [
-                        "zoom"
-                    ],
-                    13.7,
-                    [
-                        1,
-                        1,
-                        0
-                    ],
-                    14,
-                    [
-                        1,
-                        1,
-                        1
-                    ]
-                ]
-            }
-        },
-        {
             "id": "poi",
             "type": "symbol",
-            "source": "mapbox",
+            "source": "openmaptiles",
             "source-layer": "transit_stop_label",
             "filter": [
                 "all",
@@ -6760,39 +6385,5 @@
             }
         }
     ],
-    "models": {
-        "maple1-lod1": "mapbox://models/mapbox/maple1-lod1.glb",
-        "maple1-lod2": "mapbox://models/mapbox/maple1-lod2.glb",
-        "maple1-lod3": "mapbox://models/mapbox/maple1-lod3.glb",
-        "maple1-lod4": "mapbox://models/mapbox/maple1-lod4.glb",
-        "maple2-lod1": "mapbox://models/mapbox/maple2-lod1.glb",
-        "maple2-lod2": "mapbox://models/mapbox/maple2-lod2.glb",
-        "maple2-lod3": "mapbox://models/mapbox/maple2-lod3.glb",
-        "maple2-lod4": "mapbox://models/mapbox/maple2-lod4.glb",
-        "oak1-lod1": "mapbox://models/mapbox/oak1-lod1.glb",
-        "oak1-lod2": "mapbox://models/mapbox/oak1-lod2.glb",
-        "oak1-lod3": "mapbox://models/mapbox/oak1-lod3.glb",
-        "oak1-lod4": "mapbox://models/mapbox/oak1-lod4.glb",
-        "oak2-lod1": "mapbox://models/mapbox/oak2-lod1.glb",
-        "oak2-lod2": "mapbox://models/mapbox/oak2-lod2.glb",
-        "oak2-lod3": "mapbox://models/mapbox/oak2-lod3.glb",
-        "oak2-lod4": "mapbox://models/mapbox/oak2-lod4.glb",
-        "palm1-lod1": "mapbox://models/mapbox/palm1-lod1.glb",
-        "palm1-lod2": "mapbox://models/mapbox/palm1-lod2.glb",
-        "palm1-lod3": "mapbox://models/mapbox/palm1-lod3.glb",
-        "palm1-lod4": "mapbox://models/mapbox/palm1-lod4.glb",
-        "pine1-lod1": "mapbox://models/mapbox/pine1-lod1.glb",
-        "pine1-lod2": "mapbox://models/mapbox/pine1-lod2.glb",
-        "pine1-lod3": "mapbox://models/mapbox/pine1-lod3.glb",
-        "pine1-lod4": "mapbox://models/mapbox/pine1-lod4.glb",
-        "pine2-lod1": "mapbox://models/mapbox/pine2-lod1.glb",
-        "pine2-lod2": "mapbox://models/mapbox/pine2-lod2.glb",
-        "pine2-lod3": "mapbox://models/mapbox/pine2-lod3.glb",
-        "pine2-lod4": "mapbox://models/mapbox/pine2-lod4.glb",
-        "turbinetower-lod1": "mapbox://models/mapbox/turbinetower1-lod1.glb",
-        "turbinerotor-lod1": "mapbox://models/mapbox/turbinerotor1-lod1.glb",
-        "turbinetower-lod2": "mapbox://models/mapbox/turbinetower1-lod2.glb",
-        "turbinerotor-lod2": "mapbox://models/mapbox/turbinerotor1-lod2.glb"
-    },
     "id": "mini-tokyo-3d"
 }
