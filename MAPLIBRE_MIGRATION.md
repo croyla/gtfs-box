@@ -176,6 +176,22 @@ MapLibre GL JS is released under the BSD 3-Clause License.
 
 MapLibre GL JS v4.7.1 diverged from Mapbox GL JS v3.x in several ways. The following patches were required in MT3D source code:
 
+#### 0. Import Statement (Required for Build) - **CRITICAL**
+**File:** `src/helpers/helpers-mapbox.js:1`
+
+**Issue:** File was importing from 'mapbox-gl' instead of 'maplibre-gl'
+
+**Patch:**
+```javascript
+// Before
+import {LngLat, LngLatBounds} from 'mapbox-gl';
+
+// After
+import {LngLat, LngLatBounds} from 'maplibre-gl';
+```
+
+**Impact:** Without this fix, the build would use Mapbox types instead of MapLibre types, causing compatibility issues.
+
 #### 1. setLights() Method (Not Available in MapLibre)
 **File:** `src/helpers/helpers-mapbox.js:223`
 
@@ -285,10 +301,36 @@ if (mbox.__deck && mbox.__deck.props) {
 
 **Impact:** Prevents crashes when deck.gl integration is not yet initialized. Allows the map to load gracefully even if some deck.gl features aren't available.
 
-#### 5. Style Opacity Property Handling - **CRITICAL**
+#### 5. Layer Filtering and Destructuring - **CRITICAL**
+**File:** `src/helpers/helpers-mapbox.js:336-344` (getStyleOpacities function)
+
+**Issue:** MapLibre's layer structure may have undefined layers in the `_layers` object. The original code used destructuring in the filter callback `({metadata})`, which would throw errors if a layer was undefined.
+
+**Patch:**
+```javascript
+// Before
+_order.map(id => _layers[id]).filter(({metadata}) =>
+    metadata && metadata[metadataKey]
+).forEach(({id, type, metadata}) => {
+
+// After
+_order.map(id => _layers[id]).filter(layer =>
+    layer && layer.metadata && layer.metadata[metadataKey]
+).forEach(layer => {
+    // MapLibre compatibility: Ensure layer properties exist
+    if (!layer || !layer.id || !layer.type || !layer.metadata) {
+        return;
+    }
+
+    const {id, type, metadata} = layer;
+```
+
+**Impact:** This is critical for map initialization. Without this check, the map fails to load when encountering undefined layers. The patch validates layer existence before destructuring properties.
+
+#### 6. Style Opacity Property Handling - **CRITICAL**
 **Files:**
-- `src/helpers/helpers-mapbox.js:304` (getStyleOpacities function)
-- `src/helpers/helpers-mapbox.js:366` (setStyleOpacities function)
+- `src/helpers/helpers-mapbox.js:350-380` (getStyleOpacities function)
+- `src/helpers/helpers-mapbox.js:406-437` (setStyleOpacities function)
 
 **Issue:** MapLibre's `getPaintProperty()` may return `undefined` or have different structure than Mapbox, causing `TypeError: Cannot read properties of undefined (reading 'value')` when processing layer opacity.
 
@@ -347,7 +389,7 @@ for (const item of opacity) {
 
 **Impact:** This is critical for map initialization. Without these checks, the map fails to load when processing layer opacities. The patches add defensive programming to handle MapLibre's different getPaintProperty behavior.
 
-#### 6. getLights() Method (Not Available in MapLibre) - **CRITICAL**
+#### 7. getLights() Method (Not Available in MapLibre) - **CRITICAL**
 **File:** `src/helpers/helpers-mapbox.js:262` (hasDarkBackground function)
 
 **Issue:** MapLibre doesn't have the `getLights()` method. The `hasDarkBackground()` function calls this to determine lighting for background color calculations, causing crashes when the traffic layer initializes.
