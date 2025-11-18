@@ -519,7 +519,6 @@ const matchLang = location.search.match(/lang=(.*?)(?:&|$)/),
     options = {
         container: 'map',
         dataUrl: 'data',
-        style: STYLE,
         accessToken: 'pk.eyJ1IjoibmFnaXgiLCJhIjoiY201emxlbGhkMDRqYjJxc2IzMnF0dzk5aCJ9.OxzbAxJoC_Myy13ypJ4EeA',
         searchControl: false,
         modeControl: false,
