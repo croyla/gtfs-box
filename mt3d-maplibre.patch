@@ -1,39 +1,5 @@
-diff --git a/src/controls/clock-control.js b/src/controls/clock-control.js
-index 3b905af..ad4a277 100644
---- a/src/controls/clock-control.js
-+++ b/src/controls/clock-control.js
-@@ -1,4 +1,4 @@
--import {Evented} from 'mapbox-gl';
-+import {Evented} from 'maplibre-gl';
- import JapaneseHolidays from 'japanese-holidays';
- import {createElement} from '../helpers/helpers';
- 
-diff --git a/src/gpgpu/compute-renderer.js b/src/gpgpu/compute-renderer.js
-index 23b8db1..d935d7d 100644
---- a/src/gpgpu/compute-renderer.js
-+++ b/src/gpgpu/compute-renderer.js
-@@ -1,4 +1,4 @@
--import {MercatorCoordinate} from 'mapbox-gl';
-+import {MercatorCoordinate} from 'maplibre-gl';
- import {FullScreenQuad} from 'three/examples/jsm/postprocessing/Pass.js';
- import {ClampToEdgeWrapping, DataTexture, FloatType, GLSL3, MathUtils, NearestFilter, RGBAFormat, RGBAIntegerFormat, RGFormat, ShaderMaterial, UnsignedByteType, UnsignedIntType, WebGLRenderTarget} from 'three';
- import animation from '../animation';
-diff --git a/src/helpers/helpers-deck.js b/src/helpers/helpers-deck.js
-index a27e9c4..5252d8d 100644
---- a/src/helpers/helpers-deck.js
-+++ b/src/helpers/helpers-deck.js
-@@ -1,7 +1,8 @@
- export function pickObject(map, id, point) {
-     const deck = map.__deck;
- 
--    if (deck.deckPicker) {
-+    // MapLibre compatibility: Check if deck exists
-+    if (deck && deck.deckPicker) {
-         const info = deck.pickObject({x: point.x, y: point.y, layerIds: [id]});
- 
-         if (info) {
 diff --git a/src/helpers/helpers-mapbox.js b/src/helpers/helpers-mapbox.js
-index ea94d47..78420ce 100644
+index ea94d47..38c68bc 100644
 --- a/src/helpers/helpers-mapbox.js
 +++ b/src/helpers/helpers-mapbox.js
 @@ -1,4 +1,4 @@
@@ -138,7 +104,7 @@ index ea94d47..78420ce 100644
                  {r, g, b} = paintProperties.get('background-color'),
                  a = paintProperties.get('background-opacity');
              return value + luminance({r: r * lr * a, g: g * lg * a, b: b * lb * a});
-@@ -297,27 +333,47 @@ export function getStyleOpacities(map, metadataKey) {
+@@ -297,27 +333,53 @@ export function getStyleOpacities(map, metadataKey) {
          },
          opacities = [];
  
@@ -164,10 +130,16 @@ index ea94d47..78420ce 100644
 +        const key = `${type}-opacity`;
 +        let prop = propMapping[id];
 +
-+        // MapLibre compatibility: getPaintProperty might return undefined
++        // MapLibre compatibility: getPaintProperty might return undefined or throw
 +        if (prop === undefined) {
-+            const paintProp = map.getPaintProperty(id, key);
-+            prop = valueOrDefault(paintProp, 1);
++            try {
++                const paintProp = map.getPaintProperty(id, key);
++                prop = valueOrDefault(paintProp, 1);
++            } catch (e) {
++                // MapLibre may throw when accessing certain layer properties
++                console.warn(`Failed to get paint property for layer ${id}:`, e.message);
++                prop = 1;
++            }
 +        }
 +
 +        // MapLibre compatibility: Ensure prop is valid before processing
@@ -194,7 +166,7 @@ index ea94d47..78420ce 100644
              const opacity = [];
  
              prop.forEach((item, index) => {
-@@ -347,15 +403,32 @@ export function setStyleOpacities(map, styleOpacities, factorKey) {
+@@ -347,22 +409,44 @@ export function setStyleOpacities(map, styleOpacities, factorKey) {
              factor = metadata[factorKey];
          }
  
@@ -204,136 +176,50 @@ index ea94d47..78420ce 100644
 +        }
 +
          if (key) {
-             if (Array.isArray(opacity)) {
-                 prop = map.getPaintProperty(id, key);
+-            if (Array.isArray(opacity)) {
+-                prop = map.getPaintProperty(id, key);
 -                for (const {index, value} of opacity) {
+-                    const scaledOpacity = value * factor;
+-
+-                    if (prop.stops) {
+-                        prop.stops[index][1] = scaledOpacity;
+-                    } else {
+-                        prop[index] = scaledOpacity;
++            try {
++                if (Array.isArray(opacity)) {
++                    prop = map.getPaintProperty(id, key);
 +
-+                // MapLibre compatibility: Ensure prop exists before modifying
-+                if (!prop) {
-+                    prop = 1;
-+                }
-+
-+                for (const item of opacity) {
-+                    // MapLibre compatibility: Ensure item has required properties
-+                    if (!item || item.index === undefined || item.value === undefined) {
-+                        continue;
++                    // MapLibre compatibility: Ensure prop exists before modifying
++                    if (!prop) {
++                        prop = 1;
 +                    }
 +
-+                    const {index, value} = item;
-                     const scaledOpacity = value * factor;
- 
-                     if (prop.stops) {
-                         prop.stops[index][1] = scaledOpacity;
--                    } else {
-+                    } else if (Array.isArray(prop)) {
-                         prop[index] = scaledOpacity;
++                    for (const item of opacity) {
++                        // MapLibre compatibility: Ensure item has required properties
++                        if (!item || item.index === undefined || item.value === undefined) {
++                            continue;
++                        }
++
++                        const {index, value} = item;
++                        const scaledOpacity = value * factor;
++
++                        if (prop.stops) {
++                            prop.stops[index][1] = scaledOpacity;
++                        } else if (Array.isArray(prop)) {
++                            prop[index] = scaledOpacity;
++                        }
                      }
++                } else {
++                    prop = opacity * factor;
                  }
-diff --git a/src/index.esm.js b/src/index.esm.js
-index 65924df..41b7db8 100644
---- a/src/index.esm.js
-+++ b/src/index.esm.js
-@@ -4,7 +4,7 @@ import {Panel} from './panels';
- import Plugin from './plugin';
- import Popup from './popup';
- import {ThreeLayer} from './layers';
--import mapboxgl from 'mapbox-gl';
-+import mapboxgl from 'maplibre-gl';
- import * as three from 'three';
- import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader.js';
- import './css/loaders.css';
-diff --git a/src/index.js b/src/index.js
-index 080a5cf..351af1a 100644
---- a/src/index.js
-+++ b/src/index.js
-@@ -2,7 +2,7 @@ import Marker from './marker';
- import Map from './map';
- import {Panel} from './panels';
- import Popup from './popup';
--import mapboxgl from 'mapbox-gl';
-+import mapboxgl from 'maplibre-gl';
- import * as three from 'three';
- import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader.js';
- import './css/loaders.css';
-diff --git a/src/layers/geojson-layer.js b/src/layers/geojson-layer.js
-index 0c7eac1..547b145 100644
---- a/src/layers/geojson-layer.js
-+++ b/src/layers/geojson-layer.js
-@@ -22,7 +22,12 @@ export default class {
- 
-         mbox.addLayer(new MapboxLayer(options), beforeId || 'poi');
-         mbox.setLayerZoomRange(id, implementation.minzoom, implementation.maxzoom);
--        mbox.style.getOwnLayer(id).metadata = implementation.metadata;
-+
-+        // MapLibre doesn't have getOwnLayer - use _layers directly
-+        const layer = mbox.style.getOwnLayer ? mbox.style.getOwnLayer(id) : mbox.style._layers[id];
-+        if (layer) {
-+            layer.metadata = implementation.metadata;
-+        }
-     }
- 
- }
-diff --git a/src/layers/tile-3d-layer.js b/src/layers/tile-3d-layer.js
-index 68f6abf..ffa8140 100644
---- a/src/layers/tile-3d-layer.js
-+++ b/src/layers/tile-3d-layer.js
-@@ -36,7 +36,11 @@ export default class {
- 
-         mbox.addLayer(new MapboxLayer(options), beforeId || 'poi');
-         mbox.setLayerZoomRange(implementation.id, implementation.minzoom, implementation.maxzoom);
--        mbox.__deck.props.effects = [new LightingEffect({ambientLight, directionalLight})];
-+
-+        // MapLibre compatibility: Check if __deck exists before setting effects
-+        if (mbox.__deck && mbox.__deck.props) {
-+            mbox.__deck.props.effects = [new LightingEffect({ambientLight, directionalLight})];
-+        }
- 
-         if (lightColor === undefined) {
-             me._tick();
-diff --git a/src/layers/traffic-layer.js b/src/layers/traffic-layer.js
-index 95c8e74..f342e5e 100644
---- a/src/layers/traffic-layer.js
-+++ b/src/layers/traffic-layer.js
-@@ -4,7 +4,7 @@ import ComputeRenderer from '../gpgpu/compute-renderer';
- import {colorToRGBArray, lerp, valueOrDefault} from '../helpers/helpers';
- import {hasDarkBackground} from '../helpers/helpers-mapbox';
- import {AircraftMeshSet, BusMeshSet, CarMeshSet} from '../mesh-sets';
--import {Point} from 'mapbox-gl';
-+import {Point} from 'maplibre-gl';
- import {Color, Scene, MathUtils, WebGLRenderTarget, Vector3} from 'three';
- 
- const MAX_UG_CARS = 1000;
-diff --git a/src/map.js b/src/map.js
-index 12c9e36..f25717d 100644
---- a/src/map.js
-+++ b/src/map.js
-@@ -1,5 +1,5 @@
- import {featureEach} from '@turf/meta';
--import {Evented, FullscreenControl, LngLat, Map as Mapbox, MercatorCoordinate, NavigationControl} from 'mapbox-gl';
-+import {Evented, FullscreenControl, LngLat, Map as Mapbox, MercatorCoordinate, NavigationControl} from 'maplibre-gl';
- import AnimatedPopup from 'mapbox-gl-animated-popup';
- import animation from './animation';
- import Clock from './clock';
-@@ -796,7 +796,10 @@ export default class extends Evented {
+-            } else {
+-                prop = opacity * factor;
++                map.setPaintProperty(id, key, prop);
++            } catch (e) {
++                // MapLibre may throw when accessing/setting certain layer properties
++                console.warn(`Failed to set paint property for layer ${id}:`, e.message);
+             }
+-            map.setPaintProperty(id, key, prop);
+         } else {
+             setLayerProps(map, id, {opacity: factor});
          }
- 
-         // Workaround for deck.gl #3522
--        map.__deck.props.getCursor = () => map.getCanvas().style.cursor;
-+        // MapLibre compatibility: Check if __deck exists before accessing
-+        if (map.__deck && map.__deck.props) {
-+            map.__deck.props.getCursor = () => map.getCanvas().style.cursor;
-+        }
- 
-         map.addSource('odpt', {
-             type: 'geojson',
-diff --git a/src/marker.js b/src/marker.js
-index df4e24e..022f58a 100644
---- a/src/marker.js
-+++ b/src/marker.js
-@@ -1,5 +1,5 @@
- import {bindAll} from './helpers/helpers';
--import {Evented, Marker} from 'mapbox-gl';
-+import {Evented, Marker} from 'maplibre-gl';
- 
- /**
-  * Creates a marker component.
