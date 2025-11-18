@@ -30,6 +30,19 @@
       }
     },
     {
+      "id": "background-underground",
+      "type": "background",
+      "paint": {
+        "background-color": "rgba(16, 16, 16, 1)",
+        "background-opacity": 0
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 0,
+        "mt3d:opacity-underground": 1
+      }
+    },
+    {
       "id": "natural_earth",
       "type": "raster",
       "source": "ne2_shaded",
@@ -4486,6 +4499,85 @@
       }
     },
     {
+      "id": "building-underground",
+      "type": "fill",
+      "source": "openmaptiles",
+      "source-layer": "building",
+      "minzoom": 14.5,
+      "filter": [
+        "all",
+        [
+          "match",
+          [
+            "get",
+            "type"
+          ],
+          [
+            "underground_mall",
+            "subway"
+          ],
+          true,
+          false
+        ],
+        [
+          "==",
+          [
+            "get",
+            "underground"
+          ],
+          "true"
+        ],
+        [
+          "==",
+          [
+            "geometry-type"
+          ],
+          "Polygon"
+        ]
+      ],
+      "layout": {
+        "visibility": "none"
+      },
+      "paint": {
+        "fill-outline-color": "hsl(35, 8%, 80%)",
+        "fill-opacity": 0,
+        "fill-color": "hsla(268, 67%, 67%, 0.25)"
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-route": 0.1,
+        "mt3d:opacity-underground": 0
+      }
+    },
+    {
+      "id": "building-underground-underground",
+      "type": "fill",
+      "source": "openmaptiles",
+      "source-layer": "building",
+      "minzoom": 14.5,
+      "filter": [
+        "==",
+        [
+          "get",
+          "underground"
+        ],
+        "true"
+      ],
+      "layout": {
+        "visibility": "none"
+      },
+      "paint": {
+        "fill-color": "rgba(0,0,0,0)",
+        "fill-opacity": 0
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 0,
+        "mt3d:opacity-underground": 1
+      }
+    },
+    {
       "id": "building",
       "type": "fill",
       "source": "openmaptiles",
@@ -4507,6 +4599,90 @@
           14,
           "hsl(35,6%,79%)"
         ]
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-route": 0.1,
+        "mt3d:opacity-underground": 0.0625,
+        "mt3d:opacity-underground-route": 0.025
+      }
+    },
+    {
+      "id": "trees",
+      "type": "circle",
+      "source": "openmaptiles",
+      "source-layer": "poi",
+      "minzoom": 15,
+      "layout": {
+        "visibility": "none"
+      },
+      "paint": {
+        "circle-radius": 0,
+        "circle-opacity": 0
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-route": 0.1,
+        "mt3d:opacity-underground": 0.0625,
+        "mt3d:opacity-underground-route": 0.025
+      }
+    },
+    {
+      "id": "wind-turbine-shadow",
+      "type": "circle",
+      "source": "openmaptiles",
+      "source-layer": "poi",
+      "minzoom": 15,
+      "layout": {
+        "visibility": "none"
+      },
+      "paint": {
+        "circle-radius": 0,
+        "circle-opacity": 0
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-route": 0.1,
+        "mt3d:opacity-underground": 0.0625,
+        "mt3d:opacity-underground-route": 0.025
+      }
+    },
+    {
+      "id": "wind-turbine-towers",
+      "type": "circle",
+      "source": "openmaptiles",
+      "source-layer": "poi",
+      "minzoom": 15,
+      "layout": {
+        "visibility": "none"
+      },
+      "paint": {
+        "circle-radius": 0,
+        "circle-opacity": 0
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-route": 0.1,
+        "mt3d:opacity-underground": 0.0625,
+        "mt3d:opacity-underground-route": 0.025
+      }
+    },
+    {
+      "id": "wind-turbine-rotors",
+      "type": "circle",
+      "source": "openmaptiles",
+      "source-layer": "poi",
+      "minzoom": 15,
+      "layout": {
+        "visibility": "none"
+      },
+      "paint": {
+        "circle-radius": 0,
+        "circle-opacity": 0
       },
       "metadata": {
         "mt3d:opacity-effect": true,
