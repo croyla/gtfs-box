@@ -319,7 +319,7 @@ index 68f6abf..ffa8140 100644
          if (lightColor === undefined) {
              me._tick();
 diff --git a/src/layers/traffic-layer.js b/src/layers/traffic-layer.js
-index 95c8e74..2a2d250 100644
+index 95c8e74..3802a8c 100644
 --- a/src/layers/traffic-layer.js
 +++ b/src/layers/traffic-layer.js
 @@ -4,7 +4,7 @@ import ComputeRenderer from '../gpgpu/compute-renderer';
@@ -331,7 +331,35 @@ index 95c8e74..2a2d250 100644
  import {Color, Scene, MathUtils, WebGLRenderTarget, Vector3} from 'three';
  
  const MAX_UG_CARS = 1000;
-@@ -115,7 +115,10 @@ export default class {
+@@ -31,9 +31,24 @@ export default class {
+     onAdd(map, context) {
+         const me = this,
+             scene = context.scene,
+-            zoom = map.getZoom(),
+-            cameraZ = map.map.getFreeCameraOptions().position.z,
+-            modelOrigin = map.getModelOrigin(),
++            zoom = map.getZoom();
++
++        // MapLibre compatibility: getFreeCameraOptions might not exist
++        let cameraZ;
++        try {
++            if (typeof map.map.getFreeCameraOptions === 'function') {
++                cameraZ = map.map.getFreeCameraOptions().position.z;
++            } else {
++                // Fallback: calculate camera Z from zoom and pitch
++                const pitch = map.map.getPitch();
++                cameraZ = Math.pow(2, 14 - zoom) * Math.cos(pitch * Math.PI / 180) * 512;
++            }
++        } catch (e) {
++            console.warn('Failed to get camera Z, using fallback:', e.message);
++            cameraZ = Math.pow(2, 14 - zoom) * 512; // Simple fallback
++        }
++
++        const modelOrigin = map.getModelOrigin(),
+             modelScale = map.getModelScale(),
+             textureWidth = context.renderer.capabilities.maxTextureSize;
+ 
+@@ -115,7 +130,10 @@ export default class {
      onRemove(map) {
          const me = this;
  
@@ -343,7 +371,7 @@ index 95c8e74..2a2d250 100644
  
          me.ugCarMeshSet.dispose();
          me.ogCarMeshSet.dispose();
-@@ -131,8 +134,14 @@ export default class {
+@@ -131,8 +149,14 @@ export default class {
      }
  
      prerender(map, context) {
@@ -360,7 +388,7 @@ index 95c8e74..2a2d250 100644
  
          me.ugCarMeshSet.setTextures(textures);
          me.ogCarMeshSet.setTextures(textures);
-@@ -164,8 +173,15 @@ export default class {
+@@ -164,8 +188,15 @@ export default class {
      }
  
      setMode(viewMode, searchMode) {
@@ -378,7 +406,7 @@ index 95c8e74..2a2d250 100644
          let ugOpacity, ogOpacity;
  
          if (searchMode !== 'none' && searchMode !== 'edit') {
-@@ -191,8 +207,15 @@ export default class {
+@@ -191,8 +222,15 @@ export default class {
      }
  
      addBus(object) {
@@ -396,7 +424,7 @@ index 95c8e74..2a2d250 100644
              objects = me.busObjects,
              {x, y, z} = me.map.getModelPosition(object.coord, object.altitude),
              attributes = {
-@@ -222,6 +245,13 @@ export default class {
+@@ -222,6 +260,13 @@ export default class {
  
      addObject(object) {
          const me = this;
@@ -410,7 +438,7 @@ index 95c8e74..2a2d250 100644
          let routeIndex, colorIndex, sectionIndex, sectionLength, delay;
  
          if (object.type === 'train') {
-@@ -252,8 +282,14 @@ export default class {
+@@ -252,8 +297,14 @@ export default class {
              return;
          }
  
@@ -427,7 +455,7 @@ index 95c8e74..2a2d250 100644
              attributes = {
                  translation: [x, y, z],
                  rotationZ: MathUtils.degToRad(-object.bearing),
-@@ -264,8 +300,14 @@ export default class {
+@@ -264,8 +315,14 @@ export default class {
      }
  
      updateObject(object, timeOffset, duration, accelerationTime, normalizedAcceleration, decelerationTime, normalizedDeceleration) {
@@ -444,7 +472,7 @@ index 95c8e74..2a2d250 100644
              sectionLength = valueOrDefault(object.sectionLength, 1);
  
          me.computeRenderer.updateInstance(object.instanceID, sectionIndex, sectionLength, timeOffset, duration, accelerationTime, normalizedAcceleration, decelerationTime, normalizedDeceleration);
-@@ -273,6 +315,10 @@ export default class {
+@@ -273,6 +330,10 @@ export default class {
      }
  
      getObjectPosition(object) {
@@ -455,7 +483,7 @@ index 95c8e74..2a2d250 100644
          return this.computeRenderer.getInstancePosition(object.instanceID);
      }
  
-@@ -320,6 +366,11 @@ export default class {
+@@ -320,6 +381,11 @@ export default class {
          const me = this,
              instanceID = object.instanceID;
  
@@ -467,7 +495,7 @@ index 95c8e74..2a2d250 100644
          if (instanceID !== undefined) {
              me.objects.delete(instanceID);
              delete object.instanceID;
-@@ -331,8 +382,15 @@ export default class {
+@@ -331,8 +397,15 @@ export default class {
      }
  
      pickObject(mode, point) {
@@ -485,7 +513,7 @@ index 95c8e74..2a2d250 100644
              {renderer, camera} = me.context,
              rendererContext = renderer.getContext(),
              pixelRatio = window.devicePixelRatio,
-@@ -368,14 +426,26 @@ export default class {
+@@ -368,14 +441,26 @@ export default class {
      }
  
      refreshDelayMarkers(actual) {
@@ -514,7 +542,7 @@ index 95c8e74..2a2d250 100644
          this.computeRenderer.setTimeOffset(timeOffset);
      }
  
-@@ -383,6 +453,12 @@ export default class {
+@@ -383,6 +468,12 @@ export default class {
          const me = this,
              instanceID = object ? object.instanceID : -1;
  
@@ -527,7 +555,7 @@ index 95c8e74..2a2d250 100644
          me.computeRenderer.setMarked(instanceID);
          me.ugCarMeshSet.setMarkedInstanceID(instanceID);
          me.ogCarMeshSet.setMarkedInstanceID(instanceID);
-@@ -394,6 +470,12 @@ export default class {
+@@ -394,6 +485,12 @@ export default class {
          const me = this,
              instanceID = object ? object.instanceID : -1;
  
