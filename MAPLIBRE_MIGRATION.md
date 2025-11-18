@@ -169,3 +169,84 @@ Key commits in branch `claude/migrate-mapbox-maplibre-01CW2Uw5QWgj1wQFe7XhsEmE`:
 
 Mini Tokyo 3D is released under the MIT License.
 MapLibre GL JS is released under the BSD 3-Clause License.
+
+## API Compatibility Patches
+
+### MapLibre vs Mapbox API Differences
+
+MapLibre GL JS v4.7.1 diverged from Mapbox GL JS v3.x in several ways. The following patches were required in MT3D source code:
+
+#### 1. setLights() Method (Not Available in MapLibre)
+**File:** `src/helpers/helpers-mapbox.js:223`
+
+**Issue:** MapLibre doesn't have the `setLights()` method for 3D lighting
+
+**Patch:**
+```javascript
+// Before
+map.setLights([...]);
+
+// After  
+if (typeof map.setLights === 'function') {
+    map.setLights([...]);
+}
+```
+
+**Impact:** 3D lighting features gracefully degrade. Map still renders correctly without advanced lighting effects.
+
+#### 2. Sky Layer (May Not Exist)
+**File:** `src/helpers/helpers-mapbox.js:245`
+
+**Issue:** MapLibre may not have a 'sky' layer in all styles
+
+**Patch:**
+```javascript
+// Before
+map.setPaintProperty('sky', 'sky-atmosphere-sun', [sunAzimuth, sunAltitude]);
+
+// After
+try {
+    if (map.getLayer('sky')) {
+        map.setPaintProperty('sky', 'sky-atmosphere-sun', [sunAzimuth, sunAltitude]);
+    }
+} catch (e) {
+    // Sky layer not available
+}
+```
+
+**Impact:** Sky atmosphere effects degrade gracefully if not supported.
+
+### Applying Patches
+
+The patch file `mt3d-maplibre.patch` contains all required changes. To apply:
+
+```bash
+cd mt3d-source
+patch -p1 < ../gtfs-box/mt3d-maplibre.patch
+```
+
+Or manually edit `src/helpers/helpers-mapbox.js` as shown above.
+
+### Future API Differences
+
+If you encounter other API incompatibilities:
+
+1. **Check if method exists:**
+   ```javascript
+   if (typeof map.someMethod === 'function') {
+       map.someMethod(...);
+   }
+   ```
+
+2. **Use try-catch for graceful degradation:**
+   ```javascript
+   try {
+       map.someFeature(...);
+   } catch (e) {
+       console.warn('Feature not available:', e);
+   }
+   ```
+
+3. **Check MapLibre documentation:**
+   - https://maplibre.org/maplibre-gl-js/docs/API/
+

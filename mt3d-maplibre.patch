@@ -1,0 +1,57 @@
+--- a/src/helpers/helpers-mapbox.js
++++ b/src/helpers/helpers-mapbox.js
+@@ -220,17 +220,28 @@ export function setSunlight(map, time) {
+         };
+     }
+
+-    map.setLights([{
+-        id: 'ambient',
+-        type: 'ambient',
+-        properties: {
+-            color: `rgb(${ambient.r}, ${ambient.g}, ${ambient.b})`,
+-            intensity: ambient.i
+-        }
+-    }, {
+-        id: 'directional',
+-        type: 'directional',
+-        properties: {
+-            direction: ['literal', [sun.azimuth, sun.altitude]],
+-            color: `rgb(${directional.r}, ${directional.g}, ${directional.b})`,
+-            intensity: directional.i,
+-            'cast-shadows': true,
+-            'shadow-intensity': directional.w
+-        }
+-    }]);
+-
+-    map.setPaintProperty('sky', 'sky-atmosphere-sun', [sunAzimuth, sunAltitude]);
++    // MapLibre GL JS does not support setLights (Mapbox v3+ feature)
++    if (typeof map.setLights === 'function') {
++        map.setLights([{
++            id: 'ambient',
++            type: 'ambient',
++            properties: {
++                color: `rgb(${ambient.r}, ${ambient.g}, ${ambient.b})`,
++                intensity: ambient.i
++            }
++        }, {
++            id: 'directional',
++            type: 'directional',
++            properties: {
++                direction: ['literal', [sun.azimuth, sun.altitude]],
++                color: `rgb(${directional.r}, ${directional.g}, ${directional.b})`,
++                intensity: directional.i,
++                'cast-shadows': true,
++                'shadow-intensity': directional.w
++            }
++        }]);
++    }
++
++    // MapLibre may not have 'sky' layer
++    try {
++        if (map.getLayer('sky')) {
++            map.setPaintProperty('sky', 'sky-atmosphere-sun', [sunAzimuth, sunAltitude]);
++        }
++    } catch (e) {
++        // Sky layer not available in MapLibre
++    }
+ }
