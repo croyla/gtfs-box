@@ -478,6 +478,7 @@ if (!layer || !layer.paint) {
 - `Cannot read properties of undefined (reading 'setTimeOffset')`
 - `Cannot read properties of undefined (reading 'map')`
 - `Cannot read properties of undefined (reading 'getOpacity')`
+- `Cannot read properties of undefined (reading 'getModelPosition')`
 - `Cannot destructure property 'renderer' of 'context' as it is undefined`
 
 **Patch (Example - setMode method):**
@@ -517,6 +518,8 @@ setMode(viewMode, searchMode) {
 10. `removeObject()` - Return resolved promise if missing
 11. `markObject()` - Check computeRenderer before setMarked()
 12. `trackObject()` - Check computeRenderer before setTracked()
+13. `addBus()` - Check map before getModelPosition()
+14. `updateBus()` - Check map before getModelPosition()
 
 **Impact:** CRITICAL for map functionality. Without these checks, the map crashes during initialization when methods are called before the layer is fully initialized. The console warnings help debug initialization order issues.
 
