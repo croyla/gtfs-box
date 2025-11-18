@@ -2836,6 +2836,62 @@
       }
     },
     {
+      "id": "road-detail-shape-polygon",
+      "type": "fill",
+      "source": "openmaptiles",
+      "source-layer": "transportation",
+      "minzoom": 15,
+      "filter": [
+        "==",
+        [
+          "geometry-type"
+        ],
+        "Polygon"
+      ],
+      "layout": {
+        "visibility": "none"
+      },
+      "paint": {
+        "fill-color": "rgba(0,0,0,0)",
+        "fill-opacity": 0
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-route": 0.1,
+        "mt3d:opacity-underground": 0.0625,
+        "mt3d:opacity-underground-route": 0.025
+      }
+    },
+    {
+      "id": "road-detail-shape-lines",
+      "type": "line",
+      "source": "openmaptiles",
+      "source-layer": "transportation",
+      "minzoom": 15,
+      "filter": [
+        "==",
+        [
+          "geometry-type"
+        ],
+        "LineString"
+      ],
+      "layout": {
+        "visibility": "none"
+      },
+      "paint": {
+        "line-color": "rgba(0,0,0,0)",
+        "line-opacity": 0
+      },
+      "metadata": {
+        "mt3d:opacity-effect": true,
+        "mt3d:opacity": 1,
+        "mt3d:opacity-route": 0.1,
+        "mt3d:opacity-underground": 0.0625,
+        "mt3d:opacity-underground-route": 0.025
+      }
+    },
+    {
       "id": "bridge_motorway_link_casing",
       "type": "line",
       "source": "openmaptiles",
@@ -3924,7 +3980,7 @@
       }
     },
     {
-      "id": "building-3d",
+      "id": "3d-building",
       "type": "fill-extrusion",
       "source": "openmaptiles",
       "source-layer": "building",
