@@ -44,6 +44,19 @@
         if (e.dataType === 'style') {
             console.log('✅ Style data loaded');
         }
+        if (e.dataType === 'source' && e.sourceDataType === 'metadata') {
+            console.log('✅ Source metadata loaded:', e.sourceId);
+        }
+    });
+
+    map.on('sourcedataloading', (e) => {
+        console.log('⏳ Source data loading:', e.sourceId);
+    });
+
+    map.on('dataloading', (e) => {
+        if (e.dataType === 'source') {
+            console.log('⏳ Tile loading for source:', e.sourceId);
+        }
     });
 
     // Check after 3 seconds
@@ -52,6 +65,17 @@
         console.log('Loaded:', map.loaded());
         console.log('Style loaded:', map.isStyleLoaded());
         console.log('Layers:', map.getStyle().layers.map(l => l.id));
+
+        // Check canvas
+        const canvas = map.getCanvas();
+        console.log('Canvas:', canvas);
+        console.log('Canvas size:', canvas.width, 'x', canvas.height);
+        console.log('Canvas client size:', canvas.clientWidth, 'x', canvas.clientHeight);
+        console.log('Canvas style:', canvas.style.width, 'x', canvas.style.height);
+
+        // Check if tiles are loaded
+        const source = map.getSource('openmaptiles');
+        console.log('OpenMapTiles source:', source);
 
         // Test controls by programmatically zooming
         console.log('Testing zoom control...');
