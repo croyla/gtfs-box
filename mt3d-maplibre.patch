@@ -33,7 +33,7 @@ index a27e9c4..5252d8d 100644
  
          if (info) {
 diff --git a/src/helpers/helpers-mapbox.js b/src/helpers/helpers-mapbox.js
-index ea94d47..be4c487 100644
+index ea94d47..c1aff23 100644
 --- a/src/helpers/helpers-mapbox.js
 +++ b/src/helpers/helpers-mapbox.js
 @@ -220,26 +220,36 @@ export function setSunlight(map, time) {
@@ -95,6 +95,80 @@ index ea94d47..be4c487 100644
                  {r, g, b} = paintProperties.get('background-color'),
                  a = paintProperties.get('background-opacity');
              return value + luminance({r: r * lr * a, g: g * lg * a, b: b * lb * a});
+@@ -305,19 +317,33 @@ export function getStyleOpacities(map, metadataKey) {
+             return;
+         }
+ 
+-        const key = `${type}-opacity`,
+-            prop = propMapping[id] || valueOrDefault(map.getPaintProperty(id, key), 1);
++        const key = `${type}-opacity`;
++        let prop = propMapping[id];
++
++        // MapLibre compatibility: getPaintProperty might return undefined
++        if (prop === undefined) {
++            const paintProp = map.getPaintProperty(id, key);
++            prop = valueOrDefault(paintProp, 1);
++        }
++
++        // MapLibre compatibility: Ensure prop is valid before processing
++        if (!prop) {
++            opacities.push({id, key, opacity: 1, metadata});
++            return;
++        }
+ 
+         if (!isNaN(prop)) {
+             opacities.push({id, key, opacity: prop, metadata});
+-        } else if (prop.stops) {
++        } else if (prop && prop.stops) {
+             const opacity = [];
+ 
+             prop.stops.forEach((item, index) => {
+-                opacity.push({index, value: item[1]});
++                if (item && item[1] !== undefined) {
++                    opacity.push({index, value: item[1]});
++                }
+             });
+             opacities.push({id, key, opacity, metadata});
+-        } else if (prop[0] === 'case' || prop[0] === 'interpolate') {
++        } else if (Array.isArray(prop) && prop.length > 0 && (prop[0] === 'case' || prop[0] === 'interpolate')) {
+             const opacity = [];
+ 
+             prop.forEach((item, index) => {
+@@ -347,15 +373,32 @@ export function setStyleOpacities(map, styleOpacities, factorKey) {
+             factor = metadata[factorKey];
+         }
+ 
++        // MapLibre compatibility: Skip if factor is invalid
++        if (factor === undefined || factor === null) {
++            continue;
++        }
++
+         if (key) {
+             if (Array.isArray(opacity)) {
+                 prop = map.getPaintProperty(id, key);
+-                for (const {index, value} of opacity) {
++
++                // MapLibre compatibility: Ensure prop exists before modifying
++                if (!prop) {
++                    prop = 1;
++                }
++
++                for (const item of opacity) {
++                    // MapLibre compatibility: Ensure item has required properties
++                    if (!item || item.index === undefined || item.value === undefined) {
++                        continue;
++                    }
++
++                    const {index, value} = item;
+                     const scaledOpacity = value * factor;
+ 
+                     if (prop.stops) {
+                         prop.stops[index][1] = scaledOpacity;
+-                    } else {
++                    } else if (Array.isArray(prop)) {
+                         prop[index] = scaledOpacity;
+                     }
+                 }
 diff --git a/src/index.esm.js b/src/index.esm.js
 index 65924df..41b7db8 100644
 --- a/src/index.esm.js
