@@ -319,7 +319,7 @@ index 68f6abf..ffa8140 100644
          if (lightColor === undefined) {
              me._tick();
 diff --git a/src/layers/traffic-layer.js b/src/layers/traffic-layer.js
-index 95c8e74..420adb3 100644
+index 95c8e74..2a2d250 100644
 --- a/src/layers/traffic-layer.js
 +++ b/src/layers/traffic-layer.js
 @@ -4,7 +4,7 @@ import ComputeRenderer from '../gpgpu/compute-renderer';
@@ -378,7 +378,25 @@ index 95c8e74..420adb3 100644
          let ugOpacity, ogOpacity;
  
          if (searchMode !== 'none' && searchMode !== 'edit') {
-@@ -222,6 +238,13 @@ export default class {
+@@ -191,8 +207,15 @@ export default class {
+     }
+ 
+     addBus(object) {
+-        const me = this,
+-            meshSet = me.busMeshSet,
++        const me = this;
++
++        // MapLibre compatibility: Check if map exists
++        if (!me.map) {
++            console.warn('TrafficLayer: map not initialized yet');
++            return;
++        }
++
++        const meshSet = me.busMeshSet,
+             objects = me.busObjects,
+             {x, y, z} = me.map.getModelPosition(object.coord, object.altitude),
+             attributes = {
+@@ -222,6 +245,13 @@ export default class {
  
      addObject(object) {
          const me = this;
@@ -392,7 +410,24 @@ index 95c8e74..420adb3 100644
          let routeIndex, colorIndex, sectionIndex, sectionLength, delay;
  
          if (object.type === 'train') {
-@@ -264,8 +287,14 @@ export default class {
+@@ -252,8 +282,14 @@ export default class {
+             return;
+         }
+ 
+-        const me = this,
+-            {x, y, z} = me.map.getModelPosition(object.coord, object.altitude),
++        const me = this;
++
++        // MapLibre compatibility: Check if map exists
++        if (!me.map) {
++            return;
++        }
++
++        const {x, y, z} = me.map.getModelPosition(object.coord, object.altitude),
+             attributes = {
+                 translation: [x, y, z],
+                 rotationZ: MathUtils.degToRad(-object.bearing),
+@@ -264,8 +300,14 @@ export default class {
      }
  
      updateObject(object, timeOffset, duration, accelerationTime, normalizedAcceleration, decelerationTime, normalizedDeceleration) {
@@ -409,7 +444,7 @@ index 95c8e74..420adb3 100644
              sectionLength = valueOrDefault(object.sectionLength, 1);
  
          me.computeRenderer.updateInstance(object.instanceID, sectionIndex, sectionLength, timeOffset, duration, accelerationTime, normalizedAcceleration, decelerationTime, normalizedDeceleration);
-@@ -273,6 +302,10 @@ export default class {
+@@ -273,6 +315,10 @@ export default class {
      }
  
      getObjectPosition(object) {
@@ -420,7 +455,7 @@ index 95c8e74..420adb3 100644
          return this.computeRenderer.getInstancePosition(object.instanceID);
      }
  
-@@ -320,6 +353,11 @@ export default class {
+@@ -320,6 +366,11 @@ export default class {
          const me = this,
              instanceID = object.instanceID;
  
@@ -432,7 +467,7 @@ index 95c8e74..420adb3 100644
          if (instanceID !== undefined) {
              me.objects.delete(instanceID);
              delete object.instanceID;
-@@ -331,8 +369,15 @@ export default class {
+@@ -331,8 +382,15 @@ export default class {
      }
  
      pickObject(mode, point) {
@@ -450,7 +485,7 @@ index 95c8e74..420adb3 100644
              {renderer, camera} = me.context,
              rendererContext = renderer.getContext(),
              pixelRatio = window.devicePixelRatio,
-@@ -368,14 +413,26 @@ export default class {
+@@ -368,14 +426,26 @@ export default class {
      }
  
      refreshDelayMarkers(actual) {
@@ -479,7 +514,7 @@ index 95c8e74..420adb3 100644
          this.computeRenderer.setTimeOffset(timeOffset);
      }
  
-@@ -383,6 +440,12 @@ export default class {
+@@ -383,6 +453,12 @@ export default class {
          const me = this,
              instanceID = object ? object.instanceID : -1;
  
@@ -492,7 +527,7 @@ index 95c8e74..420adb3 100644
          me.computeRenderer.setMarked(instanceID);
          me.ugCarMeshSet.setMarkedInstanceID(instanceID);
          me.ogCarMeshSet.setMarkedInstanceID(instanceID);
-@@ -394,6 +457,12 @@ export default class {
+@@ -394,6 +470,12 @@ export default class {
          const me = this,
              instanceID = object ? object.instanceID : -1;
  
