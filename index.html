@@ -70,14 +70,44 @@
 
 				// Store original methods
 				const originalGetLayer = map.getLayer;
+				const originalAddLayer = map.addLayer;
 				const originalSetLayoutProperty = map.setLayoutProperty;
 				const originalSetPaintProperty = map.setPaintProperty;
+
+				// Wrap addLayer to ensure layers have metadata property
+				map.addLayer = function(layer, beforeId) {
+					// Ensure the layer object has a metadata property
+					if (typeof layer === 'object' && layer !== null) {
+						if (!layer.metadata) {
+							layer.metadata = {};
+						}
+						// Make metadata writable if it's not
+						Object.defineProperty(layer, 'metadata', {
+							value: layer.metadata || {},
+							writable: true,
+							enumerable: true,
+							configurable: true
+						});
+					}
+					return originalAddLayer.call(this, layer, beforeId);
+				};
 
 				// Wrap getLayer to always return a valid object with metadata
 				map.getLayer = function(id) {
 					const layer = originalGetLayer.call(this, id);
 					if (layer && !layer.metadata) {
-						layer.metadata = {};
+						// Try to add metadata property
+						try {
+							layer.metadata = {};
+						} catch (e) {
+							// If we can't set it directly, define it as a property
+							Object.defineProperty(layer, 'metadata', {
+								value: {},
+								writable: true,
+								enumerable: true,
+								configurable: true
+							});
+						}
 					}
 					return layer;
 				};
