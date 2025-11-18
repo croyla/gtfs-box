@@ -33,9 +33,15 @@ index a27e9c4..5252d8d 100644
  
          if (info) {
 diff --git a/src/helpers/helpers-mapbox.js b/src/helpers/helpers-mapbox.js
-index ea94d47..bfda593 100644
+index ea94d47..78420ce 100644
 --- a/src/helpers/helpers-mapbox.js
 +++ b/src/helpers/helpers-mapbox.js
+@@ -1,4 +1,4 @@
+-import {LngLat, LngLatBounds} from 'mapbox-gl';
++import {LngLat, LngLatBounds} from 'maplibre-gl';
+ import {parseCSSColor} from 'csscolorparser';
+ import {lerp, luminance, valueOrDefault} from './helpers';
+ import SunCalc from 'suncalc';
 @@ -220,26 +220,36 @@ export function setSunlight(map, time) {
          };
      }
@@ -132,7 +138,24 @@ index ea94d47..bfda593 100644
                  {r, g, b} = paintProperties.get('background-color'),
                  a = paintProperties.get('background-opacity');
              return value + luminance({r: r * lr * a, g: g * lg * a, b: b * lb * a});
-@@ -305,19 +341,33 @@ export function getStyleOpacities(map, metadataKey) {
+@@ -297,27 +333,47 @@ export function getStyleOpacities(map, metadataKey) {
+         },
+         opacities = [];
+ 
+-    _order.map(id => _layers[id]).filter(({metadata}) =>
+-        metadata && metadata[metadataKey]
+-    ).forEach(({id, type, metadata}) => {
++    _order.map(id => _layers[id]).filter(layer =>
++        layer && layer.metadata && layer.metadata[metadataKey]
++    ).forEach(layer => {
++        // MapLibre compatibility: Ensure layer properties exist
++        if (!layer || !layer.id || !layer.type || !layer.metadata) {
++            return;
++        }
++
++        const {id, type, metadata} = layer;
+         if (type === 'custom') {
+             opacities.push({id, metadata});
              return;
          }
  
@@ -171,7 +194,7 @@ index ea94d47..bfda593 100644
              const opacity = [];
  
              prop.forEach((item, index) => {
-@@ -347,15 +397,32 @@ export function setStyleOpacities(map, styleOpacities, factorKey) {
+@@ -347,15 +403,32 @@ export function setStyleOpacities(map, styleOpacities, factorKey) {
              factor = metadata[factorKey];
          }
  
