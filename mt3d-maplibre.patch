@@ -33,7 +33,7 @@ index a27e9c4..5252d8d 100644
  
          if (info) {
 diff --git a/src/helpers/helpers-mapbox.js b/src/helpers/helpers-mapbox.js
-index ea94d47..c1aff23 100644
+index ea94d47..bfda593 100644
 --- a/src/helpers/helpers-mapbox.js
 +++ b/src/helpers/helpers-mapbox.js
 @@ -220,26 +220,36 @@ export function setSunlight(map, time) {
@@ -84,18 +84,55 @@ index ea94d47..c1aff23 100644
  }
  
  /**
-@@ -259,7 +269,9 @@ export function hasDarkBackground(map, actual) {
+@@ -250,16 +260,42 @@ export function setSunlight(map, time) {
+  * @returns {boolean} True if the background color of the map is dark
+  */
+ export function hasDarkBackground(map, actual) {
+-    const light = map.getLights().filter(({type}) => type === 'ambient')[0],
+-        lightColorElements = parseCSSColor(light.properties.color),
+-        lightIntensity = light.properties.intensity,
+-        lr = lightColorElements[0] / 255 * lightIntensity,
++    // MapLibre compatibility: getLights() doesn't exist, use default values
++    let lightColorElements, lightIntensity;
++
++    if (typeof map.getLights === 'function') {
++        const lights = map.getLights();
++        const light = lights ? lights.filter(({type}) => type === 'ambient')[0] : null;
++
++        if (light && light.properties) {
++            lightColorElements = parseCSSColor(light.properties.color);
++            lightIntensity = light.properties.intensity;
++        } else {
++            // Fallback if no ambient light found
++            lightColorElements = [255, 255, 255];
++            lightIntensity = 0.7;
++        }
++    } else {
++        // Default ambient light values (similar to daytime lighting)
++        lightColorElements = [255, 255, 255];
++        lightIntensity = 0.7;
++    }
++
++    const lr = lightColorElements[0] / 255 * lightIntensity,
+         lg = lightColorElements[1] / 255 * lightIntensity,
+         lb = lightColorElements[2] / 255 * lightIntensity;
  
      if (actual) {
          return BG_LAYER_IDS.reduce((value, id) => {
 -            const paintProperties = map.style.getOwnLayer(id).paint,
 +            // MapLibre doesn't have getOwnLayer - use _layers directly
 +            const layer = map.style.getOwnLayer ? map.style.getOwnLayer(id) : map.style._layers[id];
++
++            // MapLibre compatibility: Ensure layer and paint exist
++            if (!layer || !layer.paint) {
++                return value;
++            }
++
 +            const paintProperties = layer.paint,
                  {r, g, b} = paintProperties.get('background-color'),
                  a = paintProperties.get('background-opacity');
              return value + luminance({r: r * lr * a, g: g * lg * a, b: b * lb * a});
-@@ -305,19 +317,33 @@ export function getStyleOpacities(map, metadataKey) {
+@@ -305,19 +341,33 @@ export function getStyleOpacities(map, metadataKey) {
              return;
          }
  
@@ -134,7 +171,7 @@ index ea94d47..c1aff23 100644
              const opacity = [];
  
              prop.forEach((item, index) => {
-@@ -347,15 +373,32 @@ export function setStyleOpacities(map, styleOpacities, factorKey) {
+@@ -347,15 +397,32 @@ export function setStyleOpacities(map, styleOpacities, factorKey) {
              factor = metadata[factorKey];
          }
  
