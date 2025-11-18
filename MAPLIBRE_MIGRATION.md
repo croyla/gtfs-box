@@ -246,6 +246,45 @@ const paintProperties = layer.paint,
 
 **Impact:** This is the most critical patch. Without it, the map will not load at all. The fallback uses MapLibre's internal `_layers` object to access layer data directly.
 
+#### 4. deck.gl Integration Safety Checks
+**Files:**
+- `src/map.js:799`
+- `src/helpers/helpers-deck.js:2`
+- `src/layers/tile-3d-layer.js:39`
+
+**Issue:** MapLibre + deck.gl integration may not initialize `map.__deck` immediately, causing `Cannot read properties of undefined (reading 'props')` errors.
+
+**Patch:**
+```javascript
+// Before (map.js)
+map.__deck.props.getCursor = () => map.getCanvas().style.cursor;
+
+// After
+if (map.__deck && map.__deck.props) {
+    map.__deck.props.getCursor = () => map.getCanvas().style.cursor;
+}
+```
+
+```javascript
+// Before (helpers-deck.js)
+if (deck.deckPicker) {
+
+// After
+if (deck && deck.deckPicker) {
+```
+
+```javascript
+// Before (tile-3d-layer.js)
+mbox.__deck.props.effects = [new LightingEffect({...})];
+
+// After
+if (mbox.__deck && mbox.__deck.props) {
+    mbox.__deck.props.effects = [new LightingEffect({...})];
+}
+```
+
+**Impact:** Prevents crashes when deck.gl integration is not yet initialized. Allows the map to load gracefully even if some deck.gl features aren't available.
+
 ### Applying Patches
 
 The patch file `mt3d-maplibre.patch` contains all required changes. To apply:
