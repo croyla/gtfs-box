@@ -6316,10 +6316,10 @@
   ],
   "name": "Mini Tokyo 3D - OpenFreeMap",
   "center": [
-    139.767,
-    35.6814
+    77.61,
+    12.95
   ],
-  "zoom": 14,
+  "zoom": 10,
   "bearing": 0,
   "pitch": 60,
   "fog": {

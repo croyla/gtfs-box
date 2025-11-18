@@ -554,6 +554,20 @@ if (matchGtfsUrl && matchGtfsColor) {
     initialIndex = 0;
 }
 
+// Auto-load first source if no URL parameters
+if (!matchGtfsUrl && initialIndex === 0) {
+    const firstSource = SOURCES[0];
+    options.dataSources = [{
+        gtfsUrl: firstSource.gtfsUrl,
+        vehiclePositionUrl: firstSource.vehiclePositionUrl,
+        color: `#${firstSource.color}`
+    }];
+    if (options.zoom === undefined) options.zoom = firstSource.zoom;
+    if (options.center === undefined) options.center = [firstSource.center[1], firstSource.center[0]];
+    if (options.bearing === undefined) options.bearing = firstSource.bearing;
+    if (options.pitch === undefined) options.pitch = firstSource.pitch;
+}
+
 const gtfsUrlElement = document.getElementById('gtfs-url'),
     vehiclePositionUrlElement = document.getElementById('gtfs-vp-url'),
     colorElement = document.getElementById('color'),
