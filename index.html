@@ -129,6 +129,66 @@
 					console.warn(`Could not set paint property ${name} on layer ${layerId}:`, e);
 				}
 			};
+
+			// CRITICAL FIX: Patch style.getOwnLayer method
+			// MT3D calls mbox.style.getOwnLayer(id).metadata = ... at geojson-layer.js:25
+			// We need to ensure getOwnLayer returns layers with writable metadata
+
+			// Helper function to patch a style object
+			function patchStyleGetOwnLayer(style) {
+				if (!style || style._getOwnLayerPatched) return;
+
+				const originalGetOwnLayer = style.getOwnLayer;
+
+				style.getOwnLayer = function(id) {
+					let layer;
+
+					// Try original method if it exists
+					if (originalGetOwnLayer) {
+						layer = originalGetOwnLayer.call(this, id);
+					} else {
+						// Fallback: try to get from internal _layers cache
+						layer = this._layers && this._layers[id];
+					}
+
+					// Ensure layer has writable metadata property
+					if (layer && !layer.hasOwnProperty('metadata')) {
+						try {
+							Object.defineProperty(layer, 'metadata', {
+								value: {},
+								writable: true,
+								enumerable: true,
+								configurable: true
+							});
+						} catch (e) {
+							try {
+								layer.metadata = {};
+							} catch (e2) {
+								console.warn('Could not add metadata to layer:', id, e2);
+							}
+						}
+					}
+
+					return layer;
+				};
+
+				style._getOwnLayerPatched = true;
+			}
+
+			// Intercept style property access to patch it as soon as it's set
+			Object.defineProperty(MapPrototype, 'style', {
+				get: function() {
+					return this._style;
+				},
+				set: function(value) {
+					this._style = value;
+					// Patch the style object as soon as it's assigned
+					if (value) {
+						patchStyleGetOwnLayer(value);
+					}
+				},
+				configurable: true
+			});
 		})();
 	</script>
 	<script src="mini-tokyo-3d.min.js"></script>
