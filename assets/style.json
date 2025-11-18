@@ -3260,6 +3260,10 @@
         "mt3d:opacity-route": 0.1,
         "mt3d:opacity-underground": 0.0625,
         "mt3d:opacity-underground-route": 0.025
+      },
+      "paint": {
+        "text-opacity": 1,
+        "icon-opacity": 1
       }
     },
     {
@@ -3287,6 +3291,10 @@
         "mt3d:opacity-route": 0.1,
         "mt3d:opacity-underground": 0.0625,
         "mt3d:opacity-underground-route": 0.025
+      },
+      "paint": {
+        "text-opacity": 1,
+        "icon-opacity": 1
       }
     },
     {
@@ -6166,6 +6174,10 @@
         ],
         "text-rotation-alignment": "viewport",
         "text-size": 10
+      },
+      "paint": {
+        "text-opacity": 1,
+        "icon-opacity": 1
       }
     },
     {
@@ -6248,6 +6260,10 @@
         ],
         "text-rotation-alignment": "viewport",
         "text-size": 10
+      },
+      "paint": {
+        "text-opacity": 1,
+        "icon-opacity": 1
       }
     },
     {
@@ -6336,6 +6352,10 @@
         "mt3d:opacity-route": 0.1,
         "mt3d:opacity-underground": 0.0625,
         "mt3d:opacity-underground-route": 0.025
+      },
+      "paint": {
+        "text-opacity": 1,
+        "icon-opacity": 1
       }
     },
     {
@@ -7197,6 +7217,10 @@
         "mt3d:opacity-route": 0.1,
         "mt3d:opacity-underground": 0.0625,
         "mt3d:opacity-underground-route": 0.025
+      },
+      "paint": {
+        "text-opacity": 1,
+        "icon-opacity": 1
       }
     }
   ],
