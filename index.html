@@ -58,89 +58,74 @@
 			return originalFetch.apply(this, arguments);
 		};
 
-		// Patch maplibregl.Map BEFORE MT3D loads to handle metadata access patterns
+		// Patch MapLibre Map prototype BEFORE MT3D loads
 		(function() {
-			const OriginalMap = maplibregl.Map;
-			maplibregl.Map = function(options) {
-				const map = new OriginalMap(options);
+			const MapPrototype = maplibregl.Map.prototype;
 
-				// Store original methods
-				const originalGetLayer = map.getLayer;
-				const originalAddLayer = map.addLayer;
-				const originalSetLayoutProperty = map.setLayoutProperty;
-				const originalSetPaintProperty = map.setPaintProperty;
+			// Store original methods
+			const originalAddLayer = MapPrototype.addLayer;
+			const originalGetLayer = MapPrototype.getLayer;
+			const originalSetLayoutProperty = MapPrototype.setLayoutProperty;
+			const originalSetPaintProperty = MapPrototype.setPaintProperty;
 
-				// Wrap addLayer to ensure layers have metadata property
-				map.addLayer = function(layer, beforeId) {
-					// Ensure the layer object has a metadata property
-					if (typeof layer === 'object' && layer !== null) {
-						if (!layer.metadata) {
-							layer.metadata = {};
-						}
-						// Make metadata writable if it's not
-						Object.defineProperty(layer, 'metadata', {
-							value: layer.metadata || {},
-							writable: true,
-							enumerable: true,
-							configurable: true
-						});
+			// Wrap addLayer to ensure layers have metadata property
+			MapPrototype.addLayer = function(layer, beforeId) {
+				// Ensure the layer object has a metadata property
+				if (typeof layer === 'object' && layer !== null) {
+					if (!layer.metadata) {
+						layer.metadata = {};
 					}
-					return originalAddLayer.call(this, layer, beforeId);
-				};
-
-				// Wrap getLayer to always return a valid object with metadata
-				map.getLayer = function(id) {
-					const layer = originalGetLayer.call(this, id);
-					if (layer && !layer.metadata) {
-						// Try to add metadata property
-						try {
-							layer.metadata = {};
-						} catch (e) {
-							// If we can't set it directly, define it as a property
-							Object.defineProperty(layer, 'metadata', {
-								value: {},
-								writable: true,
-								enumerable: true,
-								configurable: true
-							});
-						}
+					// If it's a custom layer with onAdd, wrap onAdd to handle metadata
+					if (typeof layer.onAdd === 'function') {
+						const originalOnAdd = layer.onAdd;
+						layer.onAdd = function(map, gl) {
+							// Ensure layer has metadata before calling original onAdd
+							if (!this.metadata) {
+								this.metadata = {};
+							}
+							return originalOnAdd.call(this, map, gl);
+						};
 					}
-					return layer;
-				};
-
-				// Wrap setLayoutProperty to handle undefined layers gracefully
-				map.setLayoutProperty = function(layerId, name, value) {
-					try {
-						const layer = this.getLayer(layerId);
-						if (layer) {
-							return originalSetLayoutProperty.call(this, layerId, name, value);
-						}
-					} catch (e) {
-						console.warn(`Could not set layout property ${name} on layer ${layerId}:`, e);
-					}
-				};
-
-				// Wrap setPaintProperty to handle undefined layers gracefully
-				map.setPaintProperty = function(layerId, name, value) {
-					try {
-						const layer = this.getLayer(layerId);
-						if (layer) {
-							return originalSetPaintProperty.call(this, layerId, name, value);
-						}
-					} catch (e) {
-						console.warn(`Could not set paint property ${name} on layer ${layerId}:`, e);
-					}
-				};
-
-				return map;
+				}
+				return originalAddLayer.call(this, layer, beforeId);
 			};
 
-			// Copy static properties and prototype
-			Object.setPrototypeOf(maplibregl.Map, OriginalMap);
-			Object.setPrototypeOf(maplibregl.Map.prototype, OriginalMap.prototype);
+			// Wrap getLayer to always return a valid object with metadata
+			MapPrototype.getLayer = function(id) {
+				const layer = originalGetLayer.call(this, id);
+				if (layer && !layer.metadata) {
+					try {
+						layer.metadata = {};
+					} catch (e) {
+						// Ignore if can't set
+					}
+				}
+				return layer;
+			};
 
-			// Also apply to window.mapboxgl since MT3D uses that
-			window.mapboxgl.Map = maplibregl.Map;
+			// Wrap setLayoutProperty to handle undefined layers gracefully
+			MapPrototype.setLayoutProperty = function(layerId, name, value) {
+				try {
+					const layer = this.getLayer(layerId);
+					if (layer) {
+						return originalSetLayoutProperty.call(this, layerId, name, value);
+					}
+				} catch (e) {
+					console.warn(`Could not set layout property ${name} on layer ${layerId}:`, e);
+				}
+			};
+
+			// Wrap setPaintProperty to handle undefined layers gracefully
+			MapPrototype.setPaintProperty = function(layerId, name, value) {
+				try {
+					const layer = this.getLayer(layerId);
+					if (layer) {
+						return originalSetPaintProperty.call(this, layerId, name, value);
+					}
+				} catch (e) {
+					console.warn(`Could not set paint property ${name} on layer ${layerId}:`, e);
+				}
+			};
 		})();
 	</script>
 	<script src="mini-tokyo-3d.min.js"></script>
