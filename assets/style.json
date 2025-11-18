@@ -6315,13 +6315,12 @@
     },
     {
       "id": "poi",
-      "type": "circle",
+      "type": "symbol",
       "source": "openmaptiles",
       "source-layer": "poi",
       "minzoom": 14,
-      "paint": {
-        "circle-radius": 0,
-        "circle-opacity": 0
+      "layout": {
+        "visibility": "none"
       }
     }
   ],
