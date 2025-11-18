@@ -13,6 +13,7 @@
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/brands.css" />
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/solid.css" />
 	<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" />
+	<link rel="stylesheet" href="mini-tokyo-3d.min.css" />
 	<link rel="stylesheet" href="gtfs-box.css" />
 	<title>GTFS box</title>
 	<meta name="description" content="A real-time 3D digital map of public transport systems with GTFS Realtime data." />
@@ -26,8 +27,17 @@
 	<meta property="og:image" content="screenshot1.jpg" />
 	<meta name="twitter:card" content="summary_large_image" />
 	<meta name="twitter:site" content="@nagix" />
+	<!-- Load MapLibre GL JS and create Mapbox GL JS compatibility shim -->
 	<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-	<script src="https://unpkg.com/protobufjs@7.4.0/dist/protobuf.min.js"></script>
+	<script>
+		// Create Mapbox GL JS compatibility layer for Mini Tokyo 3D
+		window.mapboxgl = window.maplibregl;
+		// Prevent accessToken requirement
+		window.mapboxgl.accessToken = null;
+	</script>
+	<script src="mini-tokyo-3d.min.js"></script>
+	<!-- <script src="mt3d-plugin-precipitation.min.js"></script> -->
+	<script src="mt3d-plugin-plateau.min.js"></script>
 </head>
 <body style="width: 100%; height: 100%; margin: 0; padding: 0; position: absolute; overscroll-behavior: none;">
 	<div class="header">
