@@ -231,6 +231,19 @@
       }
     },
     {
+      "id": "trees",
+      "type": "background",
+      "layout": {
+        "visibility": "none"
+      },
+      "paint": {
+        "background-opacity": 0
+      },
+      "metadata": {
+        "mt3d:layer-marker": "MT3D layers should be inserted before this layer"
+      }
+    },
+    {
       "id": "poi",
       "type": "symbol",
       "source": "openmaptiles",

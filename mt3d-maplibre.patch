@@ -569,7 +569,7 @@ index 95c8e74..3802a8c 100644
          me.ugCarMeshSet.setTrackedInstanceID(instanceID);
          me.ogCarMeshSet.setTrackedInstanceID(instanceID);
 diff --git a/src/map.js b/src/map.js
-index 12c9e36..f25717d 100644
+index 12c9e36..ee4b3bd 100644
 --- a/src/map.js
 +++ b/src/map.js
 @@ -1,5 +1,5 @@
@@ -579,7 +579,59 @@ index 12c9e36..f25717d 100644
  import AnimatedPopup from 'mapbox-gl-animated-popup';
  import animation from './animation';
  import Clock from './clock';
-@@ -796,7 +796,10 @@ export default class extends Evented {
+@@ -691,26 +691,31 @@ export default class extends Evented {
+         me.trafficLayer = new TrafficLayer({id: 'traffic'});
+ 
+         // To move to the style file in v4.0
+-        map.addLayer({
+-            id: 'sky',
+-            type: 'sky',
+-            paint: {
+-                'sky-opacity': [
+-                    'interpolate',
+-                    ['linear'],
+-                    ['zoom'],
+-                    0,
+-                    0,
+-                    5,
+-                    0.3,
+-                    8,
+-                    1
+-                ],
+-                'sky-type': 'atmosphere',
+-                'sky-atmosphere-color': 'hsl(220, 100%, 70%)',
+-                'sky-atmosphere-sun-intensity': 20
+-            }
+-        }, 'background');
++        // MapLibre compatibility: Sky layer type not supported
++        try {
++            map.addLayer({
++                id: 'sky',
++                type: 'sky',
++                paint: {
++                    'sky-opacity': [
++                        'interpolate',
++                        ['linear'],
++                        ['zoom'],
++                        0,
++                        0,
++                        5,
++                        0.3,
++                        8,
++                        1
++                    ],
++                    'sky-type': 'atmosphere',
++                    'sky-atmosphere-color': 'hsl(220, 100%, 70%)',
++                    'sky-atmosphere-sun-intensity': 20
++                }
++            }, 'background');
++        } catch (e) {
++            console.warn('Sky layer not supported in MapLibre:', e.message);
++        }
+         helpersMapbox.setSunlight(map, clock.getTime());
+ 
+         map.setLayoutProperty('poi', 'text-field', [
+@@ -796,7 +801,10 @@ export default class extends Evented {
          }
  
          // Workaround for deck.gl #3522
@@ -591,6 +643,60 @@ index 12c9e36..f25717d 100644
  
          map.addSource('odpt', {
              type: 'geojson',
+@@ -828,18 +836,18 @@ export default class extends Evented {
+                     paint: {
+                         'railways': {
+                             'line-color': color,
+-                            'line-width': lineWidth,
+-                            'line-emissive-strength': 1
++                            'line-width': lineWidth
++                            // MapLibre: 'line-emissive-strength' not supported
+                         },
+                         'stations': {
+                             'fill-color': color,
+-                            'fill-opacity': .7,
+-                            'fill-emissive-strength': 1
++                            'fill-opacity': .7
++                            // MapLibre: 'fill-emissive-strength' not supported
+                         },
+                         'stations-outline': {
+                             'line-color': ['get', 'outlineColor'],
+-                            'line-width': lineWidth,
+-                            'line-emissive-strength': 1
++                            'line-width': lineWidth
++                            // MapLibre: 'line-emissive-strength' not supported
+                         }
+                     }[key],
+                     metadata: {
+@@ -2312,8 +2320,8 @@ export default class extends Evented {
+                                 width,
+                                 22,
+                                 ['*', width, 8]
+-                            ],
+-                            'line-emissive-strength': 1
++                            ]
++                            // MapLibre: 'line-emissive-strength' not supported
+                         },
+                         metadata: {
+                             'mt3d:opacity-effect': true,
+@@ -2343,13 +2351,13 @@ export default class extends Evented {
+                             paint: {
+                                 'busstops': {
+                                     'fill-color': ['get', 'color'],
+-                                    'fill-opacity': .7,
+-                                    'fill-emissive-strength': 1
++                                    'fill-opacity': .7
++                                    // MapLibre: 'fill-emissive-strength' not supported
+                                 },
+                                 'busstops-outline': {
+                                     'line-color': ['get', 'outlineColor'],
+-                                    'line-width': lineWidth,
+-                                    'line-emissive-strength': 1
++                                    'line-width': lineWidth
++                                    // MapLibre: 'line-emissive-strength' not supported
+                                 }
+                             }[key],
+                             metadata: {
 diff --git a/src/marker.js b/src/marker.js
 index df4e24e..022f58a 100644
 --- a/src/marker.js
