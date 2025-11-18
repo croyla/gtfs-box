@@ -1,4 +1,15 @@
-const SOURCES = [{
+const SOURCES = [
+    {
+    label: 'Bengaluru Airport Buses [KIA] (Bengaluru, India)',
+    gtfsUrl: 'https://backend.bengawalk.com/kia/gtfs.zip',
+    vehiclePositionUrl: 'https://backend.bengawalk.com/kia/gtfs-rt.proto',
+    color: '00C8FF',
+    zoom: 10,
+    center: [12.95, 77.61],
+    bearing: 0,
+    pitch: 60 
+    },
+    {
     label: '都営バス (東京)',
     gtfsUrl: 'https://api-public.odpt.org/api/v4/files/Toei/data/ToeiBus-GTFS.zip',
     vehiclePositionUrl: 'https://api-public.odpt.org/api/v4/gtfs/realtime/ToeiBus',
