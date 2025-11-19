@@ -718,6 +718,43 @@ if (window.debugPanel) {
                 hasCustomLayers: underlyingMap.style && underlyingMap.style._layers ? Object.keys(underlyingMap.style._layers).length : 0
             });
 
+            // CRITICAL: Protect event system from being wiped by MT3D
+            const originalOff = underlyingMap.off;
+
+            // Detect if event system gets destroyed
+            const checkEventSystem = () => {
+                if (!underlyingMap._listeners || Object.keys(underlyingMap._listeners).length === 0) {
+                    window.debugPanel.log('ERROR', '💥 Event system was destroyed!', {
+                        listenersExist: !!underlyingMap._listeners,
+                        listenerCount: underlyingMap._listeners ? Object.keys(underlyingMap._listeners).length : 0
+                    });
+                    return false;
+                }
+                return true;
+            };
+
+            // Wrap .off() to detect if MT3D removes all handlers
+            underlyingMap.off = function(type, layerIdOrListener, listener) {
+                // If called with no arguments or just undefined, MT3D is trying to remove ALL handlers!
+                if (arguments.length === 0 || (arguments.length === 1 && type === undefined)) {
+                    window.debugPanel.log('ERROR', '💥 MT3D tried to call map.off() with no arguments (removes ALL handlers)!', {
+                        stack: new Error().stack,
+                        arguments: Array.from(arguments)
+                    });
+                    // Don't allow it - this breaks everything
+                    return this;
+                }
+
+                // Log what's being removed
+                window.debugPanel.log('DEBUG', `off() called for event: ${type}`, {
+                    type,
+                    hasListener: !!layerIdOrListener
+                });
+
+                // Otherwise allow normal off() calls
+                return originalOff.apply(this, arguments);
+            };
+
             // CRITICAL: Track zoom events to debug unresponsiveness
             let zoomEventCount = 0;
             let lastZoomTime = 0;
@@ -732,6 +769,18 @@ if (window.debugPanel) {
                     center: underlyingMap.getCenter(),
                     timestamp: new Date().toISOString()
                 });
+
+                // Check if event system survives zoomstart
+                setTimeout(() => {
+                    const survived = checkEventSystem();
+                    window.debugPanel.log(survived ? 'INFO' : 'ERROR',
+                        survived ? '✅ Event system intact after zoomstart' : '💥 Event system destroyed during zoomstart',
+                        {
+                            listenerTypes: underlyingMap._listeners ? Object.keys(underlyingMap._listeners) : [],
+                            listenerCount: underlyingMap._listeners ? Object.keys(underlyingMap._listeners).length : 0
+                        }
+                    );
+                }, 10);
             });
 
             underlyingMap.on('zoom', (e) => {
