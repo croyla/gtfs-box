@@ -551,9 +551,9 @@ const matchLang = location.search.match(/lang=(.*?)(?:&|$)/),
     matchHash = location.hash.match(/[^\d\.\-]*([\d\.\-]*)\/?([\d\.\-]*)\/?([\d\.\-]*)\/?([\d\.\-]*)\/?([\d\.\-]*)/),
     options = {
         container: 'map',
-        // GTFS-only mode: No dataUrl means skip Tokyo transit data (trains/flights/stations)
-        // This prevents loading unnecessary railways.json, stations.json, airports.json etc.
-        // No accessToken needed - using MapLibre GL JS
+        // CRITICAL FIX: Explicitly disable Tokyo data loading
+        // Without this, Mini Tokyo 3D loads 13MB+ of Tokyo transit data causing 733ms freeze
+        dataUrl: '',  // Empty string to disable Tokyo data completely
         searchControl: false,
         modeControl: false,
         plugins: [mt3dPlateau({enabled: false})],
@@ -652,6 +652,7 @@ if (window.debugPanel) {
     window.debugPanel.log('INFO', 'Initializing GTFS Box map', {
         options: {
             container: options.container,
+            dataUrl: options.dataUrl,  // Should be '' (empty) to disable Tokyo data loading
             lang: options.lang,
             zoom: options.zoom,
             center: options.center,
@@ -659,6 +660,11 @@ if (window.debugPanel) {
             pitch: options.pitch,
             dataSources: options.dataSources ? options.dataSources.length : 0
         }
+    });
+
+    window.debugPanel.log('INFO', '✅ Tokyo data loading disabled', {
+        dataUrl: options.dataUrl,
+        message: 'If you see minitokyo3d.com URLs in Network tab, the fix did not work'
     });
 }
 
