@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Working OpenFreeMap Style Test</title>
+    <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.5.2/dist/maplibre-gl.css" />
+    <style>
+        body { margin: 0; padding: 0; }
+        #map { position: absolute; top: 0; bottom: 0; width: 100%; }
+        #debug { position: absolute; top: 10px; left: 10px; background: rgba(255,255,255,0.9); padding: 10px; z-index: 1000; font-family: monospace; font-size: 12px; max-width: 600px; max-height: 80%; overflow: auto; }
+    </style>
+</head>
+<body>
+<div id="debug">Loading OpenFreeMap with pre-made style...</div>
+<div id="map"></div>
+<script src="https://unpkg.com/maplibre-gl@4.5.2/dist/maplibre-gl.js"></script>
+<script>
+    const debug = document.getElementById('debug');
+    function log(msg) {
+        debug.innerHTML += '<br>' + msg;
+        console.log(msg);
+    }
+
+    // Use the working pre-made style from OpenFreeMap
+    const map = new maplibregl.Map({
+        container: 'map',
+        style: 'https://tiles.openfreemap.org/styles/liberty',
+        center: [77.5946, 12.9716], // Bengaluru
+        zoom: 13
+    });
+
+    map.on('load', () => {
+        log('✅ Map loaded successfully!');
+        log('---');
+
+        // Inspect the style to see what tiles URL it uses
+        const style = map.getStyle();
+        log('<strong>Style sources:</strong>');
+
+        Object.keys(style.sources).forEach(sourceId => {
+            const source = style.sources[sourceId];
+            log(`<br><strong>${sourceId}</strong>:`);
+            log(`  Type: ${source.type}`);
+            if (source.tiles) {
+                log(`  Tiles URL: ${JSON.stringify(source.tiles)}`);
+            }
+            if (source.url) {
+                log(`  Source URL: ${source.url}`);
+            }
+            if (source.minzoom !== undefined) {
+                log(`  Min zoom: ${source.minzoom}`);
+            }
+            if (source.maxzoom !== undefined) {
+                log(`  Max zoom: ${source.maxzoom}`);
+            }
+        });
+
+        log('---');
+        log(`<strong>Total layers:</strong> ${style.layers.length}`);
+
+        // Check for water, park, and transportation layers
+        const waterLayers = style.layers.filter(l => l['source-layer'] === 'water');
+        const parkLayers = style.layers.filter(l => l['source-layer'] === 'park');
+        const transportationLayers = style.layers.filter(l => l['source-layer'] === 'transportation');
+
+        log(`<strong>Water layers:</strong> ${waterLayers.length}`);
+        if (waterLayers.length > 0) {
+            waterLayers.forEach(l => log(`  - ${l.id} (type: ${l.type})`));
+        }
+
+        log(`<strong>Park layers:</strong> ${parkLayers.length}`);
+        if (parkLayers.length > 0) {
+            parkLayers.forEach(l => log(`  - ${l.id} (type: ${l.type})`));
+        }
+
+        log(`<strong>Transportation layers:</strong> ${transportationLayers.length}`);
+        if (transportationLayers.length > 0) {
+            transportationLayers.forEach(l => log(`  - ${l.id} (type: ${l.type})`));
+        }
+
+        log('---');
+
+        // Query features
+        const features = map.queryRenderedFeatures();
+        log(`<strong>Rendered features:</strong> ${features.length}`);
+
+        if (features.length > 0) {
+            log('✅ Features are rendering!');
+
+            // Count by source-layer
+            const layerCounts = {};
+            features.forEach(f => {
+                if (f.sourceLayer) {
+                    layerCounts[f.sourceLayer] = (layerCounts[f.sourceLayer] || 0) + 1;
+                }
+            });
+
+            log('<br><strong>Features by source-layer:</strong>');
+            Object.keys(layerCounts).sort().forEach(layer => {
+                log(`  - ${layer}: ${layerCounts[layer]}`);
+            });
+        } else {
+            log('❌ NO FEATURES RENDERED!');
+        }
+    });
+
+    map.on('error', (e) => {
+        log('❌ ERROR: ' + e.error.message);
+    });
+</script>
+</body>
+</html>
