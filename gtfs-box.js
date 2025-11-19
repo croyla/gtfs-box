@@ -780,6 +780,39 @@ if (window.debugPanel) {
                             listenerCount: underlyingMap._listeners ? Object.keys(underlyingMap._listeners).length : 0
                         }
                     );
+
+                    // Check if interaction handlers are still enabled
+                    const handlers = underlyingMap.handlers || underlyingMap._handlers;
+                    if (handlers) {
+                        const handlerStatus = {};
+                        ['scrollZoom', 'boxZoom', 'dragRotate', 'dragPan', 'keyboard', 'doubleClickZoom', 'touchZoomRotate', 'touchPitch'].forEach(name => {
+                            if (handlers[name]) {
+                                handlerStatus[name] = {
+                                    enabled: handlers[name].isEnabled ? handlers[name].isEnabled() : 'unknown',
+                                    active: handlers[name].isActive ? handlers[name].isActive() : 'unknown'
+                                };
+                            }
+                        });
+                        window.debugPanel.log('INFO', '🎮 Interaction handler status', handlerStatus);
+                    }
+
+                    // Check canvas and container status
+                    const canvas = underlyingMap.getCanvas();
+                    const container = underlyingMap.getContainer();
+                    window.debugPanel.log('INFO', '🖼️ Canvas/Container status', {
+                        hasCanvas: !!canvas,
+                        canvasStyle: canvas ? {
+                            display: canvas.style.display,
+                            pointerEvents: canvas.style.pointerEvents,
+                            visibility: canvas.style.visibility,
+                            cursor: canvas.style.cursor
+                        } : null,
+                        containerStyle: container ? {
+                            display: container.style.display,
+                            pointerEvents: container.style.pointerEvents,
+                            visibility: container.style.visibility
+                        } : null
+                    });
                 }, 10);
             });
 
