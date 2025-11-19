@@ -11,8 +11,15 @@ class DebugPanel {
         this.lastFrameTime = performance.now();
         this.frozenFrames = 0;
         this.enabled = false;
+        this.isOpen = false;
 
-        this.createUI();
+        // Defer UI creation until DOM is ready
+        if (document.body) {
+            this.createUI();
+        } else {
+            document.addEventListener('DOMContentLoaded', () => this.createUI());
+        }
+
         this.setupPerformanceMonitoring();
         this.interceptNetworkCalls();
         this.monitorFrameRate();
@@ -101,6 +108,10 @@ class DebugPanel {
 
     toggle() {
         const panel = document.getElementById('debug-panel');
+        if (!panel) {
+            console.warn('Debug panel UI not ready yet');
+            return;
+        }
         if (panel.classList.contains('hidden')) {
             this.show();
         } else {
@@ -109,13 +120,22 @@ class DebugPanel {
     }
 
     show() {
+        const panel = document.getElementById('debug-panel');
+        if (!panel) {
+            console.warn('Debug panel UI not ready yet');
+            return;
+        }
         this.enabled = true;
-        document.getElementById('debug-panel').classList.remove('hidden');
+        this.isOpen = true;
+        panel.classList.remove('hidden');
         this.log('DEBUG', 'Debug panel opened');
     }
 
     hide() {
-        document.getElementById('debug-panel').classList.add('hidden');
+        const panel = document.getElementById('debug-panel');
+        if (!panel) return;
+        this.isOpen = false;
+        panel.classList.add('hidden');
     }
 
     switchTab(tabName) {
