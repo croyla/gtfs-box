@@ -38,6 +38,8 @@
 			return originalFetch.apply(this, arguments);
 		};
 	</script>
+	<!-- Load MT3D MapLibre compatibility patch BEFORE mini-tokyo-3d.min.js -->
+	<script src="mt3d-libre/mt3d-maplibre-patch.js"></script>
 	<script src="mini-tokyo-3d.min.js?v=20251118-patch16"></script>
 	<script src="mt3d-plugin-plateau.min.js"></script>
 	<style>
