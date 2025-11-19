@@ -104,17 +104,37 @@
                             return originalOn(event, layerIdOrHandler, handler);
                         }
 
-                        // Throttle expensive events
-                        if (event === 'zoom' || event === 'move' || event === 'rotate' || event === 'pitch') {
+                        // CRITICAL: Only throttle continuous events, NOT lifecycle events
+                        // zoomstart/zoomend/pitchstart/pitchend are lifecycle events that must fire immediately
+                        // Only throttle 'zoom' and 'move' (continuous events that fire 60x/sec)
+                        if (event === 'zoom' || event === 'move') {
                             const handlerKey = `${event}_${actualHandler.toString().substring(0, 50)}`;
 
                             if (!throttledHandlers.has(handlerKey)) {
-                                // Throttle to 250ms (4 updates/second max)
-                                const throttledHandler = throttle(actualHandler, 250);
-                                throttledHandlers.set(handlerKey, throttledHandler);
+                                // Use requestAnimationFrame for smooth, synchronized throttling
+                                // This ensures updates sync with browser's repaint cycle
+                                const rafThrottledHandler = (function() {
+                                    let rafId = null;
+                                    let lastArgs = null;
+                                    let lastThis = null;
+
+                                    return function(...args) {
+                                        lastArgs = args;
+                                        lastThis = this;
+
+                                        if (rafId === null) {
+                                            rafId = requestAnimationFrame(() => {
+                                                actualHandler.apply(lastThis, lastArgs);
+                                                rafId = null;
+                                            });
+                                        }
+                                    };
+                                })();
+
+                                throttledHandlers.set(handlerKey, rafThrottledHandler);
 
                                 if (window.debugPanel) {
-                                    window.debugPanel.log('DEBUG', `⏱️ Throttling ${event} handler (250ms)`, {
+                                    window.debugPanel.log('DEBUG', `⏱️ RAF-throttling ${event} handler (60fps max)`, {
                                         event,
                                         originalHandler: actualHandler.name || 'anonymous'
                                     });
@@ -165,16 +185,34 @@
                         return originalMapOn.call(this, event, handler);
                     }
 
-                    // Throttle expensive events
-                    if (event === 'zoom' || event === 'move' || event === 'rotate' || event === 'pitch') {
+                    // CRITICAL: Only throttle continuous events, NOT lifecycle events
+                    if (event === 'zoom' || event === 'move') {
                         const handlerKey = `${event}_${handler.toString().substring(0, 50)}`;
 
                         if (!mapThrottledHandlers.has(handlerKey)) {
-                            const throttledHandler = throttle(handler, 250);
-                            mapThrottledHandlers.set(handlerKey, throttledHandler);
+                            // Use requestAnimationFrame for smooth throttling
+                            const rafThrottledHandler = (function() {
+                                let rafId = null;
+                                let lastArgs = null;
+                                let lastThis = null;
+
+                                return function(...args) {
+                                    lastArgs = args;
+                                    lastThis = this;
+
+                                    if (rafId === null) {
+                                        rafId = requestAnimationFrame(() => {
+                                            handler.apply(lastThis, lastArgs);
+                                            rafId = null;
+                                        });
+                                    }
+                                };
+                            })();
+
+                            mapThrottledHandlers.set(handlerKey, rafThrottledHandler);
 
                             if (window.debugPanel) {
-                                window.debugPanel.log('DEBUG', `⏱️ Throttling MT3D ${event} handler (250ms)`, {
+                                window.debugPanel.log('DEBUG', `⏱️ RAF-throttling MT3D ${event} handler (60fps max)`, {
                                     event,
                                     handlerName: handler.name || 'anonymous'
                                 });

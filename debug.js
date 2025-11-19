@@ -23,6 +23,7 @@ class DebugPanel {
         this.setupPerformanceMonitoring();
         this.interceptNetworkCalls();
         this.monitorFrameRate();
+        this.setupGlobalErrorHandlers();
     }
 
     createUI() {
@@ -329,6 +330,51 @@ class DebugPanel {
         };
 
         requestAnimationFrame(checkFrame);
+    }
+
+    setupGlobalErrorHandlers() {
+        // Catch all uncaught errors
+        window.addEventListener('error', (event) => {
+            this.log('ERROR', `💥 Uncaught Error: ${event.message}`, {
+                error: event.error,
+                filename: event.filename,
+                lineno: event.lineno,
+                colno: event.colno,
+                stack: event.error?.stack
+            });
+        });
+
+        // Catch all unhandled promise rejections
+        window.addEventListener('unhandledrejection', (event) => {
+            this.log('ERROR', `💥 Unhandled Promise Rejection: ${event.reason}`, {
+                reason: event.reason,
+                promise: event.promise,
+                stack: event.reason?.stack
+            });
+        });
+
+        // Wrap console.error to catch errors
+        const originalConsoleError = console.error;
+        const debugPanel = this;
+        console.error = function(...args) {
+            debugPanel.log('ERROR', `🔴 Console Error: ${args.join(' ')}`, {
+                arguments: args,
+                stack: new Error().stack
+            });
+            originalConsoleError.apply(console, args);
+        };
+
+        // Wrap console.warn to catch warnings
+        const originalConsoleWarn = console.warn;
+        console.warn = function(...args) {
+            debugPanel.log('WARN', `⚠️ Console Warning: ${args.join(' ')}`, {
+                arguments: args,
+                stack: new Error().stack
+            });
+            originalConsoleWarn.apply(console, args);
+        };
+
+        this.log('INFO', '✅ Global error handlers installed');
     }
 
     interceptNetworkCalls() {
