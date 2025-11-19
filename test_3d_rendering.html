@@ -99,20 +99,21 @@
     </div>
 
     <script>
-        // Initialize debug panel
-        if (window.debugPanel) {
-            window.debugPanel.log('INFO', '🧪 3D Rendering Test initialized');
-            window.debugPanel.enable();
-            // Auto-open debug panel
-            setTimeout(() => {
-                if (window.debugPanel && !window.debugPanel.isOpen) {
-                    window.debugPanel.toggle();
-                }
-            }, 100);
-        }
+        // Wait for DOM to be fully loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initialize debug panel
+            if (window.debugPanel) {
+                window.debugPanel.log('INFO', '🧪 3D Rendering Test initialized');
+                // Auto-open debug panel
+                setTimeout(() => {
+                    if (window.debugPanel && !window.debugPanel.isOpen) {
+                        window.debugPanel.toggle();
+                    }
+                }, 100);
+            }
 
-        // Sample vehicle data generator
-        function generateVehicles(count, center = [77.61, 12.95]) {
+            // Sample vehicle data generator
+            function generateVehicles(count, center = [77.61, 12.95]) {
             if (window.debugPanel) {
                 window.debugPanel.log('INFO', `Generating ${count} sample vehicles`, {
                     center,
@@ -381,17 +382,18 @@
             clearLayers();
         });
 
-        // Monitor for errors
-        window.addEventListener('error', (e) => {
-            if (window.debugPanel) {
-                window.debugPanel.log('ERROR', 'Global error caught', {
-                    message: e.message,
-                    filename: e.filename,
-                    lineno: e.lineno,
-                    colno: e.colno
-                });
-            }
-        });
+            // Monitor for errors
+            window.addEventListener('error', (e) => {
+                if (window.debugPanel) {
+                    window.debugPanel.log('ERROR', 'Global error caught', {
+                        message: e.message,
+                        filename: e.filename,
+                        lineno: e.lineno,
+                        colno: e.colno
+                    });
+                }
+            });
+        }); // End of DOMContentLoaded
     </script>
 </body>
 </html>
