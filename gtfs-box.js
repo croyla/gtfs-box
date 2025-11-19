@@ -770,6 +770,17 @@ if (window.debugPanel) {
                     timestamp: new Date().toISOString()
                 });
 
+                // IMMEDIATELY check if scrollZoom is enabled (before async checks)
+                if (underlyingMap.scrollZoom) {
+                    window.debugPanel.log('INFO', '⚡ IMMEDIATE scrollZoom status', {
+                        isEnabled: underlyingMap.scrollZoom.isEnabled ? underlyingMap.scrollZoom.isEnabled() : 'no method',
+                        isActive: underlyingMap.scrollZoom.isActive ? underlyingMap.scrollZoom.isActive() : 'no method',
+                        type: typeof underlyingMap.scrollZoom,
+                        hasEnable: typeof underlyingMap.scrollZoom.enable === 'function',
+                        hasDisable: typeof underlyingMap.scrollZoom.disable === 'function'
+                    });
+                }
+
                 // CRITICAL: Monitor DOM events after zoomstart to see if they're blocked
                 const canvas = underlyingMap.getCanvas();
                 if (canvas) {
@@ -798,6 +809,12 @@ if (window.debugPanel) {
                     canvas.addEventListener('wheel', wheelListener);
                     canvas.addEventListener('mousedown', mouseListener);
 
+                    window.debugPanel.log('INFO', '✅ DOM event listeners attached', {
+                        canvasElement: !!canvas,
+                        hasWheelListener: true,
+                        hasMouseListener: true
+                    });
+
                     // Clean up after 5 seconds
                     setTimeout(() => {
                         canvas.removeEventListener('wheel', wheelListener);
@@ -808,6 +825,8 @@ if (window.debugPanel) {
                             mapZoomEvents: zoomEventCount
                         });
                     }, 5000);
+                } else {
+                    window.debugPanel.log('ERROR', '❌ Could not attach DOM listeners - no canvas!');
                 }
 
                 // Check if event system survives zoomstart
@@ -830,21 +849,21 @@ if (window.debugPanel) {
                         privateKeys: Object.keys(underlyingMap).filter(k => k.startsWith('_') && k.includes('handler')).slice(0, 10)
                     });
 
-                    const handlers = underlyingMap.handlers || underlyingMap._handlers;
-                    if (handlers) {
-                        const handlerStatus = {};
-                        ['scrollZoom', 'boxZoom', 'dragRotate', 'dragPan', 'keyboard', 'doubleClickZoom', 'touchZoomRotate', 'touchPitch'].forEach(name => {
-                            if (handlers[name]) {
-                                handlerStatus[name] = {
-                                    enabled: handlers[name].isEnabled ? handlers[name].isEnabled() : 'unknown',
-                                    active: handlers[name].isActive ? handlers[name].isActive() : 'unknown'
-                                };
-                            }
-                        });
-                        window.debugPanel.log('INFO', '🎮 Interaction handler status', handlerStatus);
-                    } else {
-                        window.debugPanel.log('WARN', '⚠️ Could not find interaction handlers');
-                    }
+                    // Handlers are DIRECTLY on the map object, not in a sub-property!
+                    const handlerStatus = {};
+                    ['scrollZoom', 'boxZoom', 'dragRotate', 'dragPan', 'keyboard', 'doubleClickZoom', 'touchZoomRotate', 'touchPitch'].forEach(name => {
+                        if (underlyingMap[name]) {
+                            handlerStatus[name] = {
+                                exists: true,
+                                enabled: underlyingMap[name].isEnabled ? underlyingMap[name].isEnabled() : 'no isEnabled method',
+                                active: underlyingMap[name].isActive ? underlyingMap[name].isActive() : 'no isActive method',
+                                type: typeof underlyingMap[name]
+                            };
+                        } else {
+                            handlerStatus[name] = { exists: false };
+                        }
+                    });
+                    window.debugPanel.log('INFO', '🎮 Interaction handler status (FIXED - checking map directly)', handlerStatus);
 
                     // Check canvas and container status
                     const canvas = underlyingMap.getCanvas();
