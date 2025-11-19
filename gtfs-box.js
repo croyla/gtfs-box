@@ -782,6 +782,14 @@ if (window.debugPanel) {
                     );
 
                     // Check if interaction handlers are still enabled
+                    // First, inspect MapLibre internals to find where handlers live
+                    window.debugPanel.log('INFO', '🔍 MapLibre internals', {
+                        hasHandlers: !!underlyingMap.handlers,
+                        has_handlers: !!underlyingMap._handlers,
+                        topLevelKeys: Object.keys(underlyingMap).filter(k => !k.startsWith('_')).slice(0, 30),
+                        privateKeys: Object.keys(underlyingMap).filter(k => k.startsWith('_') && k.includes('handler')).slice(0, 10)
+                    });
+
                     const handlers = underlyingMap.handlers || underlyingMap._handlers;
                     if (handlers) {
                         const handlerStatus = {};
@@ -794,6 +802,8 @@ if (window.debugPanel) {
                             }
                         });
                         window.debugPanel.log('INFO', '🎮 Interaction handler status', handlerStatus);
+                    } else {
+                        window.debugPanel.log('WARN', '⚠️ Could not find interaction handlers');
                     }
 
                     // Check canvas and container status
