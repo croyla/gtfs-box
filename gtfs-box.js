@@ -518,7 +518,8 @@ const matchLang = location.search.match(/lang=(.*?)(?:&|$)/),
     matchHash = location.hash.match(/[^\d\.\-]*([\d\.\-]*)\/?([\d\.\-]*)\/?([\d\.\-]*)\/?([\d\.\-]*)\/?([\d\.\-]*)/),
     options = {
         container: 'map',
-        dataUrl: 'data',
+        // GTFS-only mode: No dataUrl means skip Tokyo transit data (trains/flights/stations)
+        // This prevents loading unnecessary railways.json, stations.json, airports.json etc.
         // No accessToken needed - using MapLibre GL JS
         searchControl: false,
         modeControl: false,
