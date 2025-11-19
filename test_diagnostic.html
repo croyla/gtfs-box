@@ -50,7 +50,6 @@
 
     <script src="https://unpkg.com/maplibre-gl@4.5.2/dist/maplibre-gl.js"></script>
     <script src="mini-tokyo-3d.min.js"></script>
-    <script src="gtfs-box.js"></script>
 
     <script>
         // Diagnostic monitoring
@@ -129,8 +128,27 @@
             }
         }, 1000);
 
-        // Monitor map
+        // Initialize MT3D map
         addLog('Map initialization starting...');
+
+        const map = new mt3d.Map({
+            container: 'map',
+            // GTFS-only mode: No dataUrl
+            searchControl: false,
+            modeControl: false,
+            plugins: [],
+            style: 'assets/style.json',
+            // Bengaluru Airport Buses configuration
+            dataSources: [{
+                gtfsUrl: 'https://backend.bengawalk.com/kia/gtfs.zip',
+                vehiclePositionUrl: 'https://backend.bengawalk.com/kia/gtfs-rt.proto',
+                color: '#00C8FF'
+            }],
+            zoom: 10,
+            center: [77.61, 12.95],
+            bearing: 0,
+            pitch: 60
+        });
 
         map.on('load', () => {
             addLog('✅ Map loaded successfully!');
