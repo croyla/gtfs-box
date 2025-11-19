@@ -316,7 +316,14 @@ class DebugPanel {
         const debugPanel = this;
 
         window.fetch = async function(...args) {
-            const url = typeof args[0] === 'string' ? args[0] : args[0].url;
+            // Safely extract URL
+            let url = 'unknown';
+            try {
+                url = typeof args[0] === 'string' ? args[0] : args[0].url;
+            } catch (e) {
+                // Fallback if URL extraction fails
+            }
+
             const method = args[1]?.method || 'GET';
             const callId = `${Date.now()}-${Math.random()}`;
 
@@ -327,9 +334,14 @@ class DebugPanel {
                 startTime: performance.now()
             };
 
-            debugPanel.networkCalls.set(callId, callInfo);
-            debugPanel.log('INFO', `Network request started: ${method} ${url}`);
-            debugPanel.updateStats();
+            try {
+                debugPanel.networkCalls.set(callId, callInfo);
+                debugPanel.log('INFO', `Network request started: ${method} ${url}`);
+                debugPanel.updateStats();
+            } catch (e) {
+                // Debug panel error shouldn't break the request
+                console.error('Debug panel logging error:', e);
+            }
 
             try {
                 const startTime = performance.now();
@@ -340,40 +352,53 @@ class DebugPanel {
                 callInfo.endTime = endTime;
                 callInfo.status = response.status;
 
-                // Try to get response size
-                const cloneResponse = response.clone();
+                // Try to get response size in background (non-blocking)
                 try {
-                    const blob = await cloneResponse.blob();
-                    callInfo.size = blob.size;
+                    const cloneResponse = response.clone();
+                    cloneResponse.blob().then(blob => {
+                        callInfo.size = blob.size;
+                    }).catch(e => {
+                        // Can't read body - this is fine
+                    });
                 } catch (e) {
-                    // Can't read body
+                    // Clone might fail in some cases
                 }
 
-                debugPanel.log('INFO', `Network request completed: ${method} ${url} (${duration.toFixed(2)}ms, ${response.status})`, {
-                    duration,
-                    status: response.status,
-                    size: callInfo.size
-                });
+                try {
+                    debugPanel.log('INFO', `Network request completed: ${method} ${url} (${duration.toFixed(2)}ms, ${response.status})`, {
+                        duration,
+                        status: response.status,
+                        size: callInfo.size
+                    });
 
-                // Track if this is a GTFS realtime request
-                if (url.includes('gtfs') || url.includes('realtime') || url.includes('proto')) {
-                    debugPanel.recordPerformance('GTFS Realtime Fetch', duration);
+                    // Track if this is a GTFS realtime request
+                    if (url.includes('gtfs') || url.includes('realtime') || url.includes('proto')) {
+                        debugPanel.recordPerformance('GTFS Realtime Fetch', duration);
+                    }
+
+                    debugPanel.updateStats();
+                } catch (e) {
+                    console.error('Debug panel logging error:', e);
                 }
-
-                debugPanel.updateStats();
 
                 return response;
             } catch (error) {
                 const endTime = performance.now();
-                callInfo.endTime = endTime;
-                callInfo.error = error.message;
 
-                debugPanel.log('ERROR', `Network request failed: ${method} ${url}`, {
-                    error: error.message,
-                    duration: endTime - callInfo.startTime
-                });
+                try {
+                    callInfo.endTime = endTime;
+                    callInfo.error = error.message;
 
-                debugPanel.updateStats();
+                    debugPanel.log('ERROR', `Network request failed: ${method} ${url}`, {
+                        error: error.message,
+                        duration: endTime - callInfo.startTime
+                    });
+
+                    debugPanel.updateStats();
+                } catch (e) {
+                    console.error('Debug panel logging error:', e);
+                }
+
                 throw error;
             }
         };
@@ -477,11 +502,22 @@ class DebugPanel {
     }
 }
 
-// Create global debug instance
-window.debugPanel = new DebugPanel();
+// Create global debug instance with error protection
+try {
+    window.debugPanel = new DebugPanel();
 
-// Log initial page load
-window.debugPanel.log('INFO', 'GTFS Box debug panel initialized');
-window.debugPanel.log('INFO', `User Agent: ${navigator.userAgent}`);
-window.debugPanel.log('INFO', `Screen: ${window.screen.width}x${window.screen.height}`);
-window.debugPanel.log('INFO', `Viewport: ${window.innerWidth}x${window.innerHeight}`);
+    // Log initial page load
+    window.debugPanel.log('INFO', 'GTFS Box debug panel initialized');
+    window.debugPanel.log('INFO', `User Agent: ${navigator.userAgent}`);
+    window.debugPanel.log('INFO', `Screen: ${window.screen.width}x${window.screen.height}`);
+    window.debugPanel.log('INFO', `Viewport: ${window.innerWidth}x${window.innerHeight}`);
+} catch (error) {
+    console.error('Failed to initialize debug panel:', error);
+    // Create a minimal stub to prevent errors in gtfs-box.js
+    window.debugPanel = {
+        log: () => {},
+        recordPerformance: () => {},
+        measure: (name, fn) => fn(),
+        measureAsync: (name, fn) => fn()
+    };
+}
