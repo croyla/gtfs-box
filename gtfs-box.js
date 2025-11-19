@@ -5,7 +5,7 @@ const SOURCES = [
     vehiclePositionUrl: 'https://backend.bengawalk.com/kia/gtfs-rt.proto',
     color: '00C8FF',
     zoom: 10,
-    center: [12.95, 77.61],
+    center: [77.61, 12.95],
     bearing: 0,
     pitch: 60
     },
@@ -532,11 +532,13 @@ const matchLang = location.search.match(/lang=(.*?)(?:&|$)/),
     matchHash = location.hash.match(/[^\d\.\-]*([\d\.\-]*)\/?([\d\.\-]*)\/?([\d\.\-]*)\/?([\d\.\-]*)\/?([\d\.\-]*)/),
     options = {
         container: 'map',
-        dataUrl: 'data',
-        accessToken: 'pk.eyJ1IjoibmFnaXgiLCJhIjoiY201emxlbGhkMDRqYjJxc2IzMnF0dzk5aCJ9.OxzbAxJoC_Myy13ypJ4EeA',
+        // GTFS-only mode: No dataUrl means skip Tokyo transit data (trains/flights/stations)
+        // This prevents loading unnecessary railways.json, stations.json, airports.json etc.
+        // No accessToken needed - using MapLibre GL JS
         searchControl: false,
         modeControl: false,
-        plugins: [mt3dPrecipitation(), mt3dPlateau({enabled: false})]
+        plugins: [mt3dPlateau({enabled: false})],
+        style: 'assets/style.json'
     };
 let initialIndex;
 
@@ -566,6 +568,20 @@ if (matchGtfsUrl && matchGtfsColor) {
     }];
 } else if (initialIndex === undefined) {
     initialIndex = 0;
+}
+
+// Auto-load first source if no URL parameters
+if (!matchGtfsUrl && initialIndex === 0) {
+    const firstSource = SOURCES[0];
+    options.dataSources = [{
+        gtfsUrl: firstSource.gtfsUrl,
+        vehiclePositionUrl: firstSource.vehiclePositionUrl,
+        color: `#${firstSource.color}`
+    }];
+    if (options.zoom === undefined) options.zoom = firstSource.zoom;
+    if (options.center === undefined) options.center = firstSource.center;
+    if (options.bearing === undefined) options.bearing = firstSource.bearing;
+    if (options.pitch === undefined) options.pitch = firstSource.pitch;
 }
 
 const gtfsUrlElement = document.getElementById('gtfs-url'),

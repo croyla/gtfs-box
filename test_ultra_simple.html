@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Ultra Simple Test</title>
+    <style>
+        body { margin: 0; padding: 0; background: #333; }
+        #map { position: absolute; top: 0; bottom: 0; width: 100%; background: #000; }
+        #debug { position: absolute; top: 10px; left: 10px; background: white; padding: 10px; z-index: 1000; font-family: monospace; }
+    </style>
+</head>
+<body>
+<div id="debug">Loading...</div>
+<div id="map"></div>
+
+<!-- Load MapLibre FIRST, before anything else -->
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.5.2/dist/maplibre-gl.css" />
+<script src="https://unpkg.com/maplibre-gl@4.5.2/dist/maplibre-gl.js"></script>
+
+<script>
+    const debug = document.getElementById('debug');
+
+    function log(msg) {
+        debug.innerHTML += '<br>' + msg;
+        console.log(msg);
+    }
+
+    // Check immediately
+    log('Script loaded');
+    log('window.maplibregl exists: ' + (typeof window.maplibregl !== 'undefined'));
+
+    if (typeof maplibregl !== 'undefined') {
+        log('maplibregl.version: ' + maplibregl.version);
+        log('maplibregl.Map exists: ' + (typeof maplibregl.Map !== 'undefined'));
+
+        try {
+            const map = new maplibregl.Map({
+                container: 'map',
+                style: {
+                    version: 8,
+                    sources: {},
+                    layers: [{
+                        id: 'background',
+                        type: 'background',
+                        paint: { 'background-color': '#00ff00' }  // Bright green
+                    }]
+                },
+                center: [0, 0],
+                zoom: 2
+            });
+
+            log('✅ Map created!');
+
+            map.on('load', () => {
+                log('✅ Map LOAD event fired!');
+                log('Should see GREEN screen');
+            });
+
+            map.on('error', (e) => {
+                log('❌ ERROR: ' + e.error.message);
+            });
+
+        } catch (e) {
+            log('❌ Exception creating map: ' + e.message);
+        }
+    } else {
+        log('❌ maplibregl is NOT defined!');
+    }
+</script>
+</body>
+</html>

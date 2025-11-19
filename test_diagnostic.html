@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>GTFS Box - Diagnostic</title>
+    <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.5.2/dist/maplibre-gl.css" />
+    <link rel="stylesheet" href="mini-tokyo-3d.min.css">
+    <link rel="stylesheet" href="gtfs-box.css">
+    <style>
+        #diagnostic {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            color: #0f0;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 11px;
+            z-index: 10000;
+            max-height: 90vh;
+            overflow-y: auto;
+            min-width: 300px;
+        }
+        #diagnostic div {
+            margin: 2px 0;
+        }
+        .warn { color: #ff0; }
+        .error { color: #f00; }
+        .ok { color: #0f0; }
+    </style>
+</head>
+<body>
+    <div id="diagnostic">
+        <div class="ok">🔍 Diagnostic Monitor Active</div>
+        <div id="fps">FPS: --</div>
+        <div id="memory">Memory: --</div>
+        <div id="buses">Buses: --</div>
+        <div id="tiles">Tiles Loaded: --</div>
+        <div id="lastUpdate">Last Update: --</div>
+        <div id="errors">Errors: 0</div>
+        <div id="warnings">Warnings: 0</div>
+        <hr>
+        <div id="log"></div>
+    </div>
+
+    <div id="map"></div>
+    <div id="loader" style="display: none"></div>
+    <div id="splash" style="display: none"></div>
+
+    <script src="https://unpkg.com/maplibre-gl@4.5.2/dist/maplibre-gl.js"></script>
+    <script src="mini-tokyo-3d.min.js"></script>
+
+    <script>
+        // Diagnostic monitoring
+        const log = document.getElementById('log');
+        const fpsEl = document.getElementById('fps');
+        const memoryEl = document.getElementById('memory');
+        const busesEl = document.getElementById('buses');
+        const tilesEl = document.getElementById('tiles');
+        const lastUpdateEl = document.getElementById('lastUpdate');
+        const errorsEl = document.getElementById('errors');
+        const warningsEl = document.getElementById('warnings');
+
+        let errorCount = 0;
+        let warningCount = 0;
+        let lastFrameTime = performance.now();
+        let frameCount = 0;
+        let fps = 0;
+
+        function addLog(msg, type = 'ok') {
+            const div = document.createElement('div');
+            div.className = type;
+            div.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+            log.insertBefore(div, log.firstChild);
+
+            // Keep only last 20 log entries
+            while (log.children.length > 20) {
+                log.removeChild(log.lastChild);
+            }
+        }
+
+        // Intercept console.error
+        const originalError = console.error;
+        console.error = function(...args) {
+            errorCount++;
+            errorsEl.textContent = `Errors: ${errorCount}`;
+            addLog('ERROR: ' + args.join(' '), 'error');
+            originalError.apply(console, args);
+        };
+
+        // Intercept console.warn
+        const originalWarn = console.warn;
+        console.warn = function(...args) {
+            warningCount++;
+            warningsEl.textContent = `Warnings: ${warningCount}`;
+            addLog('WARN: ' + args.join(' '), 'warn');
+            originalWarn.apply(console, args);
+        };
+
+        // Monitor FPS
+        function updateFPS() {
+            const now = performance.now();
+            frameCount++;
+
+            if (now - lastFrameTime >= 1000) {
+                fps = Math.round(frameCount * 1000 / (now - lastFrameTime));
+                fpsEl.textContent = `FPS: ${fps}`;
+                fpsEl.className = fps < 10 ? 'error' : fps < 30 ? 'warn' : 'ok';
+
+                frameCount = 0;
+                lastFrameTime = now;
+            }
+
+            requestAnimationFrame(updateFPS);
+        }
+        updateFPS();
+
+        // Monitor memory (if available)
+        setInterval(() => {
+            if (performance.memory) {
+                const usedMB = Math.round(performance.memory.usedJSHeapSize / 1048576);
+                const totalMB = Math.round(performance.memory.jsHeapSizeLimit / 1048576);
+                memoryEl.textContent = `Memory: ${usedMB}MB / ${totalMB}MB`;
+                memoryEl.className = usedMB > totalMB * 0.9 ? 'error' : usedMB > totalMB * 0.7 ? 'warn' : 'ok';
+            } else {
+                memoryEl.textContent = 'Memory: N/A';
+            }
+        }, 1000);
+
+        // Initialize MT3D map
+        addLog('Map initialization starting...');
+
+        const map = new mt3d.Map({
+            container: 'map',
+            // GTFS-only mode: No dataUrl
+            searchControl: false,
+            modeControl: false,
+            plugins: [],
+            style: 'assets/style.json',
+            // Bengaluru Airport Buses configuration
+            dataSources: [{
+                gtfsUrl: 'https://backend.bengawalk.com/kia/gtfs.zip',
+                vehiclePositionUrl: 'https://backend.bengawalk.com/kia/gtfs-rt.proto',
+                color: '#00C8FF'
+            }],
+            zoom: 10,
+            center: [77.61, 12.95],
+            bearing: 0,
+            pitch: 60
+        });
+
+        map.on('load', () => {
+            addLog('✅ Map loaded successfully!');
+
+            const mapboxMap = map.getMapboxMap();
+
+            // Monitor tiles
+            mapboxMap.on('sourcedata', () => {
+                lastUpdateEl.textContent = `Last Update: ${new Date().toLocaleTimeString()}`;
+            });
+
+            // Monitor map errors
+            mapboxMap.on('error', (e) => {
+                addLog('MAP ERROR: ' + e.error.message, 'error');
+            });
+
+            // Count buses periodically
+            setInterval(() => {
+                try {
+                    const busCount = map.gtfs ?
+                        Array.from(map.gtfs.values()).reduce((sum, gtfs) =>
+                            sum + (gtfs.activeBusLookup ? gtfs.activeBusLookup.size : 0), 0) : 0;
+                    busesEl.textContent = `Buses: ${busCount}`;
+
+                    // Count loaded tiles
+                    const tileCount = Object.keys(mapboxMap.style.sourceCaches.openmaptiles?._tiles || {}).length;
+                    tilesEl.textContent = `Tiles Loaded: ${tileCount}`;
+                } catch (e) {
+                    // Ignore
+                }
+            }, 2000);
+
+            addLog('Diagnostic monitoring active');
+        });
+
+        // Detect freeze
+        let lastActivityTime = Date.now();
+        let freezeDetected = false;
+
+        setInterval(() => {
+            const now = Date.now();
+            const timeSinceActivity = now - lastActivityTime;
+
+            if (timeSinceActivity > 5000 && !freezeDetected) {
+                freezeDetected = true;
+                addLog('🚨 POSSIBLE FREEZE DETECTED! No activity for ' + (timeSinceActivity/1000) + 's', 'error');
+            }
+
+            lastActivityTime = now;
+        }, 100);
+    </script>
+</body>
+</html>

@@ -12,22 +12,46 @@
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/fontawesome.css" />
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/brands.css" />
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/solid.css" />
+	<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.5.2/dist/maplibre-gl.css" />
 	<link rel="stylesheet" href="mini-tokyo-3d.min.css" />
 	<link rel="stylesheet" href="gtfs-box.css" />
 	<title>GTFS box</title>
-	<meta name="description" content="A real-time 3D digital map of Tokyo's public transport system. This data visualization was produced by Akihiko Kusanagi." />
+	<meta name="description" content="A real-time 3D digital map of public transport systems with GTFS Realtime data." />
 	<meta name="viewport" content="user-scalable=no, minimum-scale=1.0, maximum-scale=1.0, width=device-width, height=device-height, initial-scale=1" />
 	<meta property="og:title" content="GTFS box" />
-	<meta property="og:description" content="A real-time 3D digital map of Tokyo's public transport system. This data visualization was produced by Akihiko Kusanagi." />
-	<meta property="og:locale" content="ja_JP" />
+	<meta property="og:description" content="A real-time 3D digital map of public transport systems with GTFS Realtime data." />
+	<meta property="og:locale" content="en_US" />
 	<link rel="canonical" href="https://nagix.github.io/gtfs-box" />
 	<meta property="og:url" content="https://nagix.github.io/gtfs-box" />
 	<meta property="og:site_name" content="GTFS box" />
 	<meta property="og:image" content="screenshot1.jpg" />
 	<meta name="twitter:card" content="summary_large_image" />
 	<meta name="twitter:site" content="@nagix" />
-	<script src="mini-tokyo-3d.min.js"></script>
-	<script src="mt3d-plugin-precipitation.min.js"></script>
+	<!-- Load MapLibre GL JS v4.5.2 - Known stable version -->
+	<script src="https://unpkg.com/maplibre-gl@4.5.2/dist/maplibre-gl.js"></script>
+	<script>
+		// Intercept Mapbox API calls to prevent 403 errors
+		const originalFetch = window.fetch;
+		window.fetch = function(url, options) {
+			// Mock Mapbox tilequery API for timezone data
+			if (typeof url === 'string' && url.includes('api.mapbox.com/v4/') && url.includes('/tilequery/')) {
+				console.log('[MAPBOX INTERCEPT] Returning mock timezone data for:', url);
+				return Promise.resolve(new Response(JSON.stringify({
+					type: 'FeatureCollection',
+					features: [{
+						properties: {
+							TZID: 'UTC'
+						}
+					}]
+				}), {
+					status: 200,
+					headers: { 'Content-Type': 'application/json' }
+				}));
+			}
+			return originalFetch.apply(this, arguments);
+		};
+	</script>
+	<script src="mini-tokyo-3d.min.js?v=20251118-patch16"></script>
 	<script src="mt3d-plugin-plateau.min.js"></script>
 </head>
 <body style="width: 100%; height: 100%; margin: 0; padding: 0; position: absolute; overscroll-behavior: none;">

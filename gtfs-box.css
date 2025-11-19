@@ -40,6 +40,9 @@ body {
     overflow: hidden;
     transition: height 300ms;
 }
+.config-container.expanded {
+    height: 160px;
+}
 .config {
     position: absolute;
     bottom: 0;
@@ -106,6 +109,33 @@ body {
 .content {
     width: 100%;
     flex: 1 1 auto;
+}
+/* Override MT3D's fixed size to allow full-screen map */
+.content.mini-tokyo-3d,
+.content .mini-tokyo-3d {
+    width: 100% !important;
+    height: 100% !important;
+}
+/* CRITICAL: Override touch-action to enable map interactions */
+/* MT3D sets touch-action: none which blocks ALL pointer/touch events */
+.content.mini-tokyo-3d,
+.mini-tokyo-3d {
+    touch-action: auto !important;
+}
+.content > #map,
+.content.mini-tokyo-3d > #map,
+.mini-tokyo-3d #map {
+    width: 100% !important;
+    height: 100% !important;
+}
+/* Ensure MapLibre's canvas container and canvas are full size */
+.mini-tokyo-3d .mapboxgl-canvas-container,
+.mini-tokyo-3d .mapboxgl-canvas {
+    width: 100% !important;
+    height: 100% !important;
+    position: absolute;
+    top: 0;
+    left: 0;
 }
 .route-ctrl {
     height: 100%;

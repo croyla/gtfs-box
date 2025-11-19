@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>MapLibre Only Test</title>
+    <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.5.2/dist/maplibre-gl.css" />
+    <style>
+        body { margin: 0; padding: 0; }
+        #map { position: absolute; top: 0; bottom: 0; width: 100%; }
+    </style>
+</head>
+<body>
+<div id="map"></div>
+<script src="https://unpkg.com/maplibre-gl@4.5.2/dist/maplibre-gl.js"></script>
+<script>
+    console.log('MapLibre GL JS version:', maplibregl.version);
+
+    const map = new maplibregl.Map({
+        container: 'map',
+        style: 'assets/style.json',
+        center: [77.5946, 12.9716], // Bengaluru
+        zoom: 14,
+        pitch: 60,
+        bearing: 0
+    });
+
+    map.on('load', () => {
+        console.log('✅ MAPLIBRE MAP LOADED');
+        console.log('Zoom:', map.getZoom());
+        console.log('Center:', map.getCenter());
+    });
+
+    map.on('error', (e) => {
+        console.error('❌ MAP ERROR:', e);
+    });
+
+    map.on('sourcedata', (e) => {
+        if (e.isSourceLoaded) {
+            console.log('Source loaded:', e.sourceId);
+        }
+    });
+
+    map.on('data', (e) => {
+        if (e.dataType === 'style') {
+            console.log('✅ Style data loaded');
+        }
+        if (e.dataType === 'source' && e.sourceDataType === 'metadata') {
+            console.log('✅ Source metadata loaded:', e.sourceId);
+        }
+    });
+
+    map.on('sourcedataloading', (e) => {
+        console.log('⏳ Source data loading:', e.sourceId);
+    });
+
+    map.on('dataloading', (e) => {
+        if (e.dataType === 'source') {
+            console.log('⏳ Tile loading for source:', e.sourceId);
+        }
+    });
+
+    // Check after 3 seconds
+    setTimeout(() => {
+        console.log('--- 3 Second Status Check ---');
+        console.log('Loaded:', map.loaded());
+        console.log('Style loaded:', map.isStyleLoaded());
+        console.log('Layers:', map.getStyle().layers.map(l => l.id));
+
+        // Check canvas
+        const canvas = map.getCanvas();
+        console.log('Canvas:', canvas);
+        console.log('Canvas size:', canvas.width, 'x', canvas.height);
+        console.log('Canvas client size:', canvas.clientWidth, 'x', canvas.clientHeight);
+        console.log('Canvas style:', canvas.style.width, 'x', canvas.style.height);
+
+        // Check WebGL context
+        const gl = canvas.getContext('webgl') || canvas.getContext('webgl2') || canvas.getContext('experimental-webgl');
+        console.log('WebGL context:', gl);
+        if (gl) {
+            console.log('WebGL vendor:', gl.getParameter(gl.VENDOR));
+            console.log('WebGL renderer:', gl.getParameter(gl.RENDERER));
+            console.log('WebGL version:', gl.getParameter(gl.VERSION));
+        } else {
+            console.error('❌ NO WEBGL CONTEXT!');
+        }
+
+        // Check if MapLibre is rendering
+        console.log('Map render frame callback:', map._renderFrameCallback);
+        console.log('Map loaded:', map._loaded);
+        console.log('Map style loaded:', map.style ? map.style.loaded() : 'no style');
+
+        // Force a repaint
+        console.log('Forcing map repaint...');
+        map.triggerRepaint();
+
+        // Check if tiles are loaded
+        const source = map.getSource('openmaptiles');
+        console.log('OpenMapTiles source:', source);
+
+        // Test controls by programmatically zooming
+        console.log('Testing zoom control...');
+        map.zoomTo(15, {duration: 1000});
+    }, 3000);
+
+    // Check after 6 seconds
+    setTimeout(() => {
+        console.log('--- 6 Second Status Check ---');
+        console.log('Current zoom:', map.getZoom());
+        console.log('Can we interact with the map? Try clicking/dragging!');
+    }, 6000);
+</script>
+</body>
+</html>

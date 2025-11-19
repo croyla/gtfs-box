@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>MapLibre Test</title>
+    <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.5.2/dist/maplibre-gl.css" />
+    <style>
+        body { margin: 0; padding: 0; }
+        #map { position: absolute; top: 0; bottom: 0; width: 100%; }
+        /* Override MT3D's fixed 380px size to allow full-screen map */
+        .mini-tokyo-3d {
+            width: 100% !important;
+            height: 100% !important;
+        }
+        .mini-tokyo-3d > #map {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+<div id="map"></div>
+<script src="https://unpkg.com/maplibre-gl@4.5.2/dist/maplibre-gl.js"></script>
+<script>
+    // Intercept Mapbox API calls to prevent 403 errors
+    const originalFetch = window.fetch;
+    window.fetch = function(url, options) {
+        // Mock Mapbox tilequery API for timezone data
+        if (typeof url === 'string' && url.includes('api.mapbox.com/v4/') && url.includes('/tilequery/')) {
+            console.log('[MAPBOX INTERCEPT] Returning mock timezone data for:', url);
+            return Promise.resolve(new Response(JSON.stringify({
+                type: 'FeatureCollection',
+                features: [{
+                    properties: {
+                        TZID: 'UTC'
+                    }
+                }]
+            }), {
+                status: 200,
+                headers: { 'Content-Type': 'application/json' }
+            }));
+        }
+        return originalFetch.apply(this, arguments);
+    };
+</script>
+<script src="mini-tokyo-3d.min.js"></script>
+<script>
+    console.log('Starting Mini Tokyo 3D initialization...');
+
+    // Intercept console warnings to track initialization
+    const originalWarn = console.warn;
+    let warnCount = 0;
+    console.warn = function(...args) {
+        warnCount++;
+        originalWarn.apply(console, args);
+    };
+
+    const map = new mt3d.Map({
+        container: 'map',
+        style: 'assets/style.json',
+        center: [77.5946, 12.9716], // Bengaluru
+        zoom: 14,
+        pitch: 60,
+        bearing: 0
+    });
+
+    console.log('Map object created');
+
+    map.on('load', () => {
+        console.log('✅ MAP LOADED SUCCESSFULLY!');
+        console.log(`Total warnings during init: ${warnCount}`);
+    });
+
+    map.on('error', (e) => {
+        console.error('❌ MAP ERROR:', e);
+    });
+
+    map.on('style.load', () => {
+        console.log('✅ Style loaded');
+    });
+
+    map.on('render', () => {
+        console.log('Map render event fired');
+    });
+
+    // Check after 5 seconds
+    setTimeout(() => {
+        console.log('--- 5 Second Status Check ---');
+
+        // Check if the underlying MapLibre map exists
+        const innerMap = map.map || map;
+        console.log('MT3D map object:', map);
+        console.log('Inner MapLibre map:', innerMap);
+
+        if (innerMap.loaded) {
+            console.log('Map loaded:', innerMap.loaded());
+        }
+        if (innerMap.isStyleLoaded) {
+            console.log('Style loaded:', innerMap.isStyleLoaded());
+        }
+
+        // Check canvas
+        const canvas = innerMap.getCanvas ? innerMap.getCanvas() : document.querySelector('.mapboxgl-canvas');
+        console.log('Canvas element:', canvas);
+        if (canvas) {
+            console.log('Canvas size:', canvas.width, 'x', canvas.height);
+            console.log('Canvas style:', canvas.style.width, 'x', canvas.style.height);
+        }
+
+        // Check container
+        const container = innerMap.getContainer ? innerMap.getContainer() : document.querySelector('#map');
+        console.log('Container element:', container);
+        if (container) {
+            console.log('Container size:', container.offsetWidth, 'x', container.offsetHeight);
+        }
+
+        // Check map state
+        if (innerMap.getCenter) {
+            console.log('Center:', innerMap.getCenter());
+            console.log('Zoom:', innerMap.getZoom());
+        }
+
+        console.log('Total warnings:', warnCount);
+    }, 5000);
+</script>
+</body>
+</html>
