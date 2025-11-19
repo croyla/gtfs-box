@@ -633,6 +633,14 @@ const map = new mt3d.Map(options);
 if (window.debugPanel) {
     window.debugPanel.log('INFO', 'Map instance created');
 
+    // Log what kind of map object we have
+    window.debugPanel.log('INFO', 'Map object type', {
+        hasGetMapboxMap: typeof map.getMapboxMap === 'function',
+        hasGetMap: typeof map.getMap === 'function',
+        mapConstructor: map.constructor.name,
+        mapKeys: Object.keys(map).slice(0, 20) // First 20 properties
+    });
+
     // Monitor all map events for debugging
     const monitoredEvents = [
         'load', 'error', 'data', 'dataloading', 'styledata',
@@ -659,6 +667,39 @@ if (window.debugPanel) {
             window.debugPanel.log(level, `Map event: ${eventName}`, logData);
         });
     });
+
+    // Try to access the underlying MapLibre/Mapbox instance
+    try {
+        const underlyingMap = map.getMapboxMap ? map.getMapboxMap() : (map.getMap ? map.getMap() : null);
+        if (underlyingMap) {
+            window.debugPanel.log('INFO', 'Underlying map instance found', {
+                version: underlyingMap.version,
+                constructor: underlyingMap.constructor.name,
+                hasCustomLayers: underlyingMap.style && underlyingMap.style._layers ? Object.keys(underlyingMap.style._layers).length : 0
+            });
+
+            // Monitor render events
+            underlyingMap.on('render', () => {
+                if (window.debugPanel && window.debugPanel.enabled) {
+                    // Only log renders occasionally to avoid spam
+                    if (Math.random() < 0.01) {
+                        window.debugPanel.log('DEBUG', 'Map render event');
+                    }
+                }
+            });
+
+            // Monitor for rendering errors
+            underlyingMap.on('error', (e) => {
+                window.debugPanel.log('ERROR', 'Underlying map error', {
+                    error: e.error ? e.error.message : String(e)
+                });
+            });
+        }
+    } catch (err) {
+        window.debugPanel.log('WARN', 'Could not access underlying map instance', {
+            error: err.message
+        });
+    }
 
     // Monitor for any unhandled errors
     window.addEventListener('error', (e) => {
@@ -799,6 +840,37 @@ const routeControl = new RouteControl({
 map.on('load', () => {
     if (window.debugPanel) {
         window.debugPanel.log('INFO', 'Map load event triggered');
+
+        // Log deck.gl/WebGL info
+        try {
+            const underlyingMap = map.getMapboxMap ? map.getMapboxMap() : null;
+            if (underlyingMap && underlyingMap.painter && underlyingMap.painter.context) {
+                const gl = underlyingMap.painter.context.gl;
+                window.debugPanel.log('INFO', 'WebGL context information', {
+                    version: gl.getParameter(gl.VERSION),
+                    vendor: gl.getParameter(gl.VENDOR),
+                    renderer: gl.getParameter(gl.RENDERER),
+                    maxTextureSize: gl.getParameter(gl.MAX_TEXTURE_SIZE)
+                });
+            }
+        } catch (err) {
+            window.debugPanel.log('WARN', 'Could not get WebGL context info', { error: err.message });
+        }
+
+        // Monitor map style changes (deck.gl layers get added here)
+        try {
+            const underlyingMap = map.getMapboxMap ? map.getMapboxMap() : null;
+            if (underlyingMap) {
+                underlyingMap.on('styledata', () => {
+                    window.debugPanel.log('INFO', 'Style data loaded/changed', {
+                        layers: underlyingMap.style._order ? underlyingMap.style._order.length : 0,
+                        sources: Object.keys(underlyingMap.style.sourceCaches || {}).length
+                    });
+                });
+            }
+        } catch (err) {
+            window.debugPanel.log('WARN', 'Could not monitor style changes', { error: err.message });
+        }
     }
 
     let prevGtfsKeys = '';
@@ -818,6 +890,26 @@ map.on('load', () => {
                     newKeys: gtfsKeys,
                     updateCount: updateCount
                 });
+
+                // Log if we're about to trigger 3D rendering
+                try {
+                    const gtfsCount = map.gtfs.size;
+                    let totalVehicles = 0;
+                    for (const gtfs of map.gtfs.values()) {
+                        if (gtfs.vehicles && Array.isArray(gtfs.vehicles)) {
+                            totalVehicles += gtfs.vehicles.length;
+                        }
+                    }
+
+                    if (totalVehicles > 0) {
+                        window.debugPanel.log('WARN', `About to render ${totalVehicles} 3D vehicles - this may trigger freeze`, {
+                            totalVehicles,
+                            gtfsSourceCount: gtfsCount
+                        });
+                    }
+                } catch (err) {
+                    window.debugPanel.log('DEBUG', 'Could not count vehicles', { error: err.message });
+                }
             }
 
             const routesBuildStartTime = performance.now();
