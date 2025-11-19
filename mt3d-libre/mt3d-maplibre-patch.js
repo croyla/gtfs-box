@@ -66,10 +66,9 @@
         };
     }
 
-    // Store original mt3d once it loads
-    const originalMT3DInit = () => {
-        if (!window.mt3d || !window.mt3d.Map) {
-            // MT3D not loaded yet, wait
+    // Patch Mini Tokyo 3D as soon as it's defined
+    const patchMT3D = (mt3d) => {
+        if (!mt3d || !mt3d.Map) {
             return false;
         }
 
@@ -77,77 +76,84 @@
             window.debugPanel.log('INFO', '✅ Mini Tokyo 3D detected, applying patches');
         }
 
-        const OriginalMap = window.mt3d.Map;
+        const OriginalMap = mt3d.Map;
 
-        // Create patched Map class
-        window.mt3d.Map = function(options) {
+        // Patch getMapboxMap on the PROTOTYPE before any instances are created
+        // This ensures the patch is active during MT3D Map construction
+        const OriginalGetMapboxMap = OriginalMap.prototype.getMapboxMap;
+        const throttledHandlersMap = new WeakMap(); // Store throttled handlers per map instance
+
+        if (OriginalGetMapboxMap) {
+            OriginalMap.prototype.getMapboxMap = function() {
+                const underlyingMap = OriginalGetMapboxMap.call(this);
+
+                // Patch the underlying map's event system (once per map)
+                if (underlyingMap && !underlyingMap._mt3dPatched) {
+                    underlyingMap._mt3dPatched = true;
+
+                    const originalOn = underlyingMap.on.bind(underlyingMap);
+                    const throttledHandlers = new Map();
+
+                    underlyingMap.on = function(event, layerIdOrHandler, handler) {
+                        // Handle both .on(event, handler) and .on(event, layerId, handler)
+                        const actualHandler = handler || layerIdOrHandler;
+                        const layerId = handler ? layerIdOrHandler : undefined;
+
+                        if (typeof actualHandler !== 'function') {
+                            // Not a handler, pass through
+                            return originalOn(event, layerIdOrHandler, handler);
+                        }
+
+                        // Throttle expensive events
+                        if (event === 'zoom' || event === 'move' || event === 'rotate' || event === 'pitch') {
+                            const handlerKey = `${event}_${actualHandler.toString().substring(0, 50)}`;
+
+                            if (!throttledHandlers.has(handlerKey)) {
+                                // Throttle to 250ms (4 updates/second max)
+                                const throttledHandler = throttle(actualHandler, 250);
+                                throttledHandlers.set(handlerKey, throttledHandler);
+
+                                if (window.debugPanel) {
+                                    window.debugPanel.log('DEBUG', `⏱️ Throttling ${event} handler (250ms)`, {
+                                        event,
+                                        originalHandler: actualHandler.name || 'anonymous'
+                                    });
+                                }
+                            }
+
+                            const wrappedHandler = throttledHandlers.get(handlerKey);
+                            return layerId
+                                ? originalOn(event, layerId, wrappedHandler)
+                                : originalOn(event, wrappedHandler);
+                        }
+
+                        // Don't throttle other events
+                        return layerId
+                            ? originalOn(event, layerId, actualHandler)
+                            : originalOn(event, actualHandler);
+                    };
+
+                    if (window.debugPanel) {
+                        window.debugPanel.log('INFO', '✅ Patched underlying map event system');
+                    }
+                }
+
+                return underlyingMap;
+            };
+
+            if (window.debugPanel) {
+                window.debugPanel.log('INFO', '✅ Patched getMapboxMap() on prototype - will intercept during construction');
+            }
+        }
+
+        // Create wrapper class that also patches direct MT3D map event listeners
+        mt3d.Map = function(options) {
             if (window.debugPanel) {
                 window.debugPanel.log('INFO', '🎯 Initializing patched Mini Tokyo 3D Map');
             }
 
-            // Call original constructor
+            // Call original constructor (prototype patch is already active)
             const mapInstance = new OriginalMap(options);
-
-            // Wrap the getMapboxMap method to ensure it returns the underlying map
-            const originalGetMapboxMap = mapInstance.getMapboxMap;
-            if (originalGetMapboxMap) {
-                mapInstance.getMapboxMap = function() {
-                    const underlyingMap = originalGetMapboxMap.call(this);
-
-                    // Patch the underlying map's event system
-                    if (underlyingMap && !underlyingMap._mt3dPatched) {
-                        underlyingMap._mt3dPatched = true;
-
-                        const originalOn = underlyingMap.on.bind(underlyingMap);
-                        const throttledHandlers = new Map();
-
-                        underlyingMap.on = function(event, layerIdOrHandler, handler) {
-                            // Handle both .on(event, handler) and .on(event, layerId, handler)
-                            const actualHandler = handler || layerIdOrHandler;
-                            const layerId = handler ? layerIdOrHandler : undefined;
-
-                            if (typeof actualHandler !== 'function') {
-                                // Not a handler, pass through
-                                return originalOn(event, layerIdOrHandler, handler);
-                            }
-
-                            // Throttle expensive events
-                            if (event === 'zoom' || event === 'move' || event === 'rotate' || event === 'pitch') {
-                                const handlerKey = `${event}_${actualHandler.toString().substring(0, 50)}`;
-
-                                if (!throttledHandlers.has(handlerKey)) {
-                                    // Throttle to 250ms (4 updates/second max)
-                                    const throttledHandler = throttle(actualHandler, 250);
-                                    throttledHandlers.set(handlerKey, throttledHandler);
-
-                                    if (window.debugPanel) {
-                                        window.debugPanel.log('DEBUG', `⏱️ Throttling ${event} handler (250ms)`,  {
-                                            event,
-                                            originalHandler: actualHandler.name || 'anonymous'
-                                        });
-                                    }
-                                }
-
-                                const wrappedHandler = throttledHandlers.get(handlerKey);
-                                return layerId
-                                    ? originalOn(event, layerId, wrappedHandler)
-                                    : originalOn(event, wrappedHandler);
-                            }
-
-                            // Don't throttle other events
-                            return layerId
-                                ? originalOn(event, layerId, actualHandler)
-                                : originalOn(event, actualHandler);
-                        };
-
-                        if (window.debugPanel) {
-                            window.debugPanel.log('INFO', '✅ Patched underlying map event system');
-                        }
-                    }
-
-                    return underlyingMap;
-                };
-            }
 
             // Also patch direct event listeners on the MT3D map instance
             const originalMapOn = mapInstance.on;
@@ -190,8 +196,8 @@
         };
 
         // Copy static methods/properties from original
-        Object.setPrototypeOf(window.mt3d.Map, OriginalMap);
-        Object.setPrototypeOf(window.mt3d.Map.prototype, OriginalMap.prototype);
+        Object.setPrototypeOf(mt3d.Map, OriginalMap);
+        Object.setPrototypeOf(mt3d.Map.prototype, OriginalMap.prototype);
 
         if (window.debugPanel) {
             window.debugPanel.log('INFO', '🎉 Mini Tokyo 3D MapLibre patch applied successfully', {
@@ -203,23 +209,33 @@
         return true;
     };
 
-    // Try to patch immediately if MT3D is already loaded
-    if (!originalMT3DInit()) {
-        // MT3D not loaded yet, wait for it
-        let attempts = 0;
-        const maxAttempts = 50; // 5 seconds
-        const checkInterval = setInterval(() => {
-            attempts++;
-            if (originalMT3DInit()) {
-                clearInterval(checkInterval);
-            } else if (attempts >= maxAttempts) {
-                clearInterval(checkInterval);
-                if (window.debugPanel) {
-                    window.debugPanel.log('ERROR', '❌ Mini Tokyo 3D not found after 5 seconds - patch not applied');
+    // Use a property trap to patch synchronously when mt3d is defined
+    // This ensures we patch BEFORE any code can call new mt3d.Map()
+    let _mt3d;
+    let patched = false;
+
+    // Check if mt3d already exists (in case this script loads after mini-tokyo-3d.min.js)
+    if (window.mt3d) {
+        patchMT3D(window.mt3d);
+        patched = true;
+    } else {
+        // Set up trap to catch when mt3d is defined
+        Object.defineProperty(window, 'mt3d', {
+            configurable: true,
+            enumerable: true,
+            get() {
+                return _mt3d;
+            },
+            set(value) {
+                _mt3d = value;
+                if (!patched && value && value.Map) {
+                    patchMT3D(value);
+                    patched = true;
                 }
-                console.error('[MT3D Patch] Mini Tokyo 3D not detected after 5 seconds');
             }
-        }, 100);
+        });
+
+        console.log('[MT3D Patch] Property trap installed - will patch when mini-tokyo-3d.min.js loads');
     }
 
 })();

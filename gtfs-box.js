@@ -670,7 +670,7 @@ if (window.debugPanel) {
 
 const map = new mt3d.Map(options);
 
-// Log map creation
+// Log map creation (mt3d-maplibre-patch.js handles throttling)
 if (window.debugPanel) {
     window.debugPanel.log('INFO', 'Map instance created');
 

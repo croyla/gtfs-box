@@ -335,6 +335,12 @@ License: MIT
 
 ## Version History
 
+### v1.1 (2025-11-19)
+- **CRITICAL FIX:** Patch getMapboxMap() on prototype instead of per-instance
+- Ensures throttling applies DURING map construction, not after
+- Uses property trap for synchronous patching when mt3d loads
+- Now correctly intercepts all zoom/move event handler registrations
+
 ### v1.0 (2025-11-19)
 - Initial release
 - Throttles zoom/move/rotate/pitch handlers to 250ms
