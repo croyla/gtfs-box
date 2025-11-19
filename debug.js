@@ -353,26 +353,8 @@ class DebugPanel {
             });
         });
 
-        // Wrap console.error to catch errors
-        const originalConsoleError = console.error;
-        const debugPanel = this;
-        console.error = function(...args) {
-            debugPanel.log('ERROR', `🔴 Console Error: ${args.join(' ')}`, {
-                arguments: args,
-                stack: new Error().stack
-            });
-            originalConsoleError.apply(console, args);
-        };
-
-        // Wrap console.warn to catch warnings
-        const originalConsoleWarn = console.warn;
-        console.warn = function(...args) {
-            debugPanel.log('WARN', `⚠️ Console Warning: ${args.join(' ')}`, {
-                arguments: args,
-                stack: new Error().stack
-            });
-            originalConsoleWarn.apply(console, args);
-        };
+        // DO NOT wrap console.error/warn - causes infinite recursion!
+        // The window error and unhandledrejection listeners are sufficient
 
         this.log('INFO', '✅ Global error handlers installed');
     }
