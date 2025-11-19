@@ -9,10 +9,7 @@
   "sources": {
     "openmaptiles": {
       "type": "vector",
-      "tiles": ["https://tiles.openfreemap.org/planet/{z}/{x}/{y}.pbf"],
-      "minzoom": 0,
-      "maxzoom": 14,
-      "attribution": "&copy; OpenStreetMap contributors"
+      "url": "https://tiles.openfreemap.org/planet"
     }
   },
   "layers": [
