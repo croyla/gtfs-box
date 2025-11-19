@@ -770,6 +770,46 @@ if (window.debugPanel) {
                     timestamp: new Date().toISOString()
                 });
 
+                // CRITICAL: Monitor DOM events after zoomstart to see if they're blocked
+                const canvas = underlyingMap.getCanvas();
+                if (canvas) {
+                    let domWheelCount = 0;
+                    let domMouseCount = 0;
+
+                    const wheelListener = (e) => {
+                        domWheelCount++;
+                        window.debugPanel.log('DEBUG', `🎡 DOM wheel event #${domWheelCount}`, {
+                            deltaY: e.deltaY,
+                            defaultPrevented: e.defaultPrevented,
+                            propagationStopped: e.cancelBubble
+                        });
+                    };
+
+                    const mouseListener = (e) => {
+                        domMouseCount++;
+                        if (domMouseCount <= 3) {
+                            window.debugPanel.log('DEBUG', `🖱️ DOM mouse event #${domMouseCount}`, {
+                                type: e.type,
+                                button: e.button
+                            });
+                        }
+                    };
+
+                    canvas.addEventListener('wheel', wheelListener);
+                    canvas.addEventListener('mousedown', mouseListener);
+
+                    // Clean up after 5 seconds
+                    setTimeout(() => {
+                        canvas.removeEventListener('wheel', wheelListener);
+                        canvas.removeEventListener('mousedown', mouseListener);
+                        window.debugPanel.log('INFO', '🎡 DOM event monitoring complete', {
+                            wheelEvents: domWheelCount,
+                            mouseEvents: domMouseCount,
+                            mapZoomEvents: zoomEventCount
+                        });
+                    }, 5000);
+                }
+
                 // Check if event system survives zoomstart
                 setTimeout(() => {
                     const survived = checkEventSystem();
