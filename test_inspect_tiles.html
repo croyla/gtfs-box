@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Inspect OpenFreeMap Tiles</title>
+    <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.5.2/dist/maplibre-gl.css" />
+    <style>
+        body { margin: 0; padding: 0; }
+        #map { position: absolute; top: 0; bottom: 50%; width: 100%; }
+        #info { position: absolute; top: 50%; bottom: 0; width: 100%; overflow: auto; background: #fff; padding: 20px; font-family: monospace; font-size: 12px; }
+    </style>
+</head>
+<body>
+<div id="map"></div>
+<div id="info">Loading...</div>
+<script src="https://unpkg.com/maplibre-gl@4.5.2/dist/maplibre-gl.js"></script>
+<script>
+    const info = document.getElementById('info');
+
+    const map = new maplibregl.Map({
+        container: 'map',
+        style: {
+            version: 8,
+            sources: {
+                openmaptiles: {
+                    type: 'vector',
+                    tiles: ['https://tiles.openfreemap.org/planet/{z}/{x}/{y}.pbf'],
+                    minzoom: 0,
+                    maxzoom: 14
+                }
+            },
+            layers: [
+                {
+                    id: 'background',
+                    type: 'background',
+                    paint: { 'background-color': '#f0f0f0' }
+                }
+            ]
+        },
+        center: [77.5946, 12.9716], // Bengaluru
+        zoom: 13
+    });
+
+    map.on('load', () => {
+        info.innerHTML = '<h3>Map Loaded - Inspecting Tiles...</h3>';
+
+        setTimeout(() => {
+            // Get the current bounds and zoom
+            const bounds = map.getBounds();
+            const zoom = Math.floor(map.getZoom());
+            const center = map.getCenter();
+
+            info.innerHTML += `<strong>Zoom:</strong> ${zoom}<br>`;
+            info.innerHTML += `<strong>Center:</strong> ${center.lng.toFixed(4)}, ${center.lat.toFixed(4)}<br><br>`;
+
+            // Try to fetch a tile directly
+            const lat = center.lat;
+            const lng = center.lng;
+            const n = Math.pow(2, zoom);
+            const x = Math.floor((lng + 180) / 360 * n);
+            const y = Math.floor((1 - Math.log(Math.tan(lat * Math.PI / 180) + 1 / Math.cos(lat * Math.PI / 180)) / Math.PI) / 2 * n);
+
+            const tileUrl = `https://tiles.openfreemap.org/planet/${zoom}/${x}/${y}.pbf`;
+            info.innerHTML += `<strong>Fetching tile:</strong> ${zoom}/${x}/${y}<br>`;
+            info.innerHTML += `<a href="${tileUrl}" target="_blank">Open tile URL</a><br><br>`;
+
+            // Check what's in the source
+            const source = map.getSource('openmaptiles');
+            info.innerHTML += `<strong>Source:</strong> ${JSON.stringify(source, null, 2)}<br><br>`;
+
+            // Query all features at the center of the map
+            const point = map.project(center);
+            const features = map.queryRenderedFeatures(point);
+
+            info.innerHTML += `<strong>Features at center:</strong> ${features.length}<br><br>`;
+
+            // List all unique source layers
+            const sourceLayers = new Set();
+
+            // Query features across the entire viewport
+            const allFeatures = map.queryRenderedFeatures();
+            info.innerHTML += `<strong>Total rendered features:</strong> ${allFeatures.length}<br>`;
+
+            allFeatures.forEach(f => {
+                if (f.sourceLayer) {
+                    sourceLayers.add(f.sourceLayer);
+                }
+            });
+
+            if (sourceLayers.size > 0) {
+                info.innerHTML += `<strong>Source layers found:</strong><br>`;
+                Array.from(sourceLayers).sort().forEach(layer => {
+                    const count = allFeatures.filter(f => f.sourceLayer === layer).length;
+                    info.innerHTML += `  - ${layer} (${count} features)<br>`;
+                });
+            } else {
+                info.innerHTML += `<strong style="color: red;">❌ NO SOURCE LAYERS FOUND!</strong><br>`;
+                info.innerHTML += `This means tiles are loading but no vector features are being rendered.<br><br>`;
+
+                // Try to inspect the tile cache
+                info.innerHTML += `<strong>Checking tile cache...</strong><br>`;
+                if (map.style && map.style.sourceCaches) {
+                    const sourceCache = map.style.sourceCaches['openmaptiles'];
+                    if (sourceCache) {
+                        info.innerHTML += `Source cache exists<br>`;
+                        info.innerHTML += `Loaded: ${sourceCache._loaded}<br>`;
+
+                        // Check loaded tiles
+                        if (sourceCache._tiles) {
+                            const tileKeys = Object.keys(sourceCache._tiles);
+                            info.innerHTML += `Tiles in cache: ${tileKeys.length}<br>`;
+
+                            if (tileKeys.length > 0) {
+                                const firstTile = sourceCache._tiles[tileKeys[0]];
+                                info.innerHTML += `Sample tile state: ${firstTile.state}<br>`;
+
+                                if (firstTile.vectorTile) {
+                                    info.innerHTML += `<strong>Vector tile layers:</strong><br>`;
+                                    const layers = Object.keys(firstTile.vectorTile.layers);
+                                    layers.forEach(layer => {
+                                        const featureCount = firstTile.vectorTile.layers[layer].length;
+                                        info.innerHTML += `  - <strong>${layer}</strong> (${featureCount} features)<br>`;
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }, 2000);
+    });
+</script>
+</body>
+</html>

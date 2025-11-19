@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>TileJSON Test - OpenFreeMap</title>
+    <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.5.2/dist/maplibre-gl.css" />
+    <style>
+        body { margin: 0; padding: 0; }
+        #map { position: absolute; top: 0; bottom: 0; width: 100%; }
+        #debug { position: absolute; top: 10px; left: 10px; background: rgba(255,255,255,0.9); padding: 10px; z-index: 1000; font-family: monospace; font-size: 12px; max-width: 600px; max-height: 80%; overflow: auto; }
+    </style>
+</head>
+<body>
+<div id="debug">Loading with TileJSON url...</div>
+<div id="map"></div>
+<script src="https://unpkg.com/maplibre-gl@4.5.2/dist/maplibre-gl.js"></script>
+<script>
+    const debug = document.getElementById('debug');
+    function log(msg) {
+        debug.innerHTML += '<br>' + msg;
+        console.log(msg);
+    }
+
+    // Use TileJSON url (the CORRECT way)
+    const map = new maplibregl.Map({
+        container: 'map',
+        style: {
+            version: 8,
+            sources: {
+                openmaptiles: {
+                    type: 'vector',
+                    url: 'https://tiles.openfreemap.org/planet'
+                }
+            },
+            layers: [
+                {
+                    id: 'background',
+                    type: 'background',
+                    paint: { 'background-color': '#f0f0f0' }
+                },
+                {
+                    id: 'water',
+                    type: 'fill',
+                    source: 'openmaptiles',
+                    'source-layer': 'water',
+                    paint: {
+                        'fill-color': '#0000ff',
+                        'fill-opacity': 1
+                    }
+                },
+                {
+                    id: 'park',
+                    type: 'fill',
+                    source: 'openmaptiles',
+                    'source-layer': 'park',
+                    paint: {
+                        'fill-color': '#00ff00',
+                        'fill-opacity': 0.7
+                    }
+                },
+                {
+                    id: 'road',
+                    type: 'line',
+                    source: 'openmaptiles',
+                    'source-layer': 'transportation',
+                    paint: {
+                        'line-color': '#ff0000',
+                        'line-width': 2
+                    }
+                },
+                {
+                    id: 'building',
+                    type: 'fill',
+                    source: 'openmaptiles',
+                    'source-layer': 'building',
+                    minzoom: 14,
+                    paint: {
+                        'fill-color': '#cccccc',
+                        'fill-opacity': 0.7
+                    }
+                }
+            ]
+        },
+        center: [77.5946, 12.9716], // Bengaluru
+        zoom: 13
+    });
+
+    map.on('load', () => {
+        log('✅ Map loaded!');
+        log('---');
+
+        // Query rendered features
+        setTimeout(() => {
+            const features = map.queryRenderedFeatures();
+            log(`<strong>Rendered features:</strong> ${features.length}`);
+
+            if (features.length > 0) {
+                log('✅ <strong>FEATURES ARE RENDERING!</strong>');
+
+                // Count by source-layer
+                const layerCounts = {};
+                features.forEach(f => {
+                    if (f.sourceLayer) {
+                        layerCounts[f.sourceLayer] = (layerCounts[f.sourceLayer] || 0) + 1;
+                    }
+                });
+
+                log('<br><strong>Features by source-layer:</strong>');
+                Object.keys(layerCounts).sort().forEach(layer => {
+                    log(`  - ${layer}: ${layerCounts[layer]}`);
+                });
+            } else {
+                log('❌ NO FEATURES RENDERED!');
+            }
+        }, 2000);
+    });
+
+    map.on('error', (e) => {
+        log('❌ ERROR: ' + e.error.message);
+    });
+
+    map.on('sourcedataloading', (e) => {
+        if (e.sourceId === 'openmaptiles' && e.isSourceLoaded === false) {
+            log(`Loading tiles for source: ${e.sourceId}`);
+        }
+    });
+
+    map.on('sourcedata', (e) => {
+        if (e.sourceId === 'openmaptiles' && e.isSourceLoaded) {
+            log(`✅ Source loaded: ${e.sourceId}`);
+        }
+    });
+</script>
+</body>
+</html>
