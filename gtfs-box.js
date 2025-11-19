@@ -614,7 +614,114 @@ selectElement.addEventListener('input', e => {
 });
 setValues(initialIndex, options);
 
+// Initialize debug logging
+if (window.debugPanel) {
+    window.debugPanel.log('INFO', 'Initializing GTFS Box map', {
+        options: {
+            container: options.container,
+            lang: options.lang,
+            zoom: options.zoom,
+            center: options.center,
+            bearing: options.bearing,
+            pitch: options.pitch,
+            dataSources: options.dataSources ? options.dataSources.length : 0
+        }
+    });
+}
+
 const map = new mt3d.Map(options);
+
+// Log map creation
+if (window.debugPanel) {
+    window.debugPanel.log('INFO', 'Map instance created');
+
+    // Log what kind of map object we have
+    window.debugPanel.log('INFO', 'Map object type', {
+        hasGetMapboxMap: typeof map.getMapboxMap === 'function',
+        hasGetMap: typeof map.getMap === 'function',
+        mapConstructor: map.constructor.name,
+        mapKeys: Object.keys(map).slice(0, 20) // First 20 properties
+    });
+
+    // Monitor all map events for debugging
+    const monitoredEvents = [
+        'load', 'error', 'data', 'dataloading', 'styledata',
+        'sourcedataloading', 'styledataloading'
+    ];
+
+    monitoredEvents.forEach(eventName => {
+        map.on(eventName, (e) => {
+            const logData = {
+                event: eventName,
+                timestamp: new Date().toISOString()
+            };
+
+            // Add event-specific data
+            if (e && typeof e === 'object') {
+                if (e.sourceId) logData.sourceId = e.sourceId;
+                if (e.isSourceLoaded !== undefined) logData.isSourceLoaded = e.isSourceLoaded;
+                if (e.source) logData.source = e.source.id || 'unknown';
+                if (e.tile) logData.tile = true;
+            }
+
+            // Log data-related events at INFO level, others at DEBUG
+            const level = eventName.includes('data') || eventName.includes('error') ? 'INFO' : 'DEBUG';
+            window.debugPanel.log(level, `Map event: ${eventName}`, logData);
+        });
+    });
+
+    // Try to access the underlying MapLibre/Mapbox instance
+    try {
+        const underlyingMap = map.getMapboxMap ? map.getMapboxMap() : (map.getMap ? map.getMap() : null);
+        if (underlyingMap) {
+            window.debugPanel.log('INFO', 'Underlying map instance found', {
+                version: underlyingMap.version,
+                constructor: underlyingMap.constructor.name,
+                hasCustomLayers: underlyingMap.style && underlyingMap.style._layers ? Object.keys(underlyingMap.style._layers).length : 0
+            });
+
+            // Monitor render events
+            underlyingMap.on('render', () => {
+                if (window.debugPanel && window.debugPanel.enabled) {
+                    // Only log renders occasionally to avoid spam
+                    if (Math.random() < 0.01) {
+                        window.debugPanel.log('DEBUG', 'Map render event');
+                    }
+                }
+            });
+
+            // Monitor for rendering errors
+            underlyingMap.on('error', (e) => {
+                window.debugPanel.log('ERROR', 'Underlying map error', {
+                    error: e.error ? e.error.message : String(e)
+                });
+            });
+        }
+    } catch (err) {
+        window.debugPanel.log('WARN', 'Could not access underlying map instance', {
+            error: err.message
+        });
+    }
+
+    // Monitor for any unhandled errors
+    window.addEventListener('error', (e) => {
+        window.debugPanel.log('ERROR', 'Unhandled error', {
+            message: e.message,
+            filename: e.filename,
+            lineno: e.lineno,
+            colno: e.colno,
+            error: e.error ? e.error.stack : 'No stack trace'
+        });
+    });
+
+    // Monitor for unhandled promise rejections
+    window.addEventListener('unhandledrejection', (e) => {
+        window.debugPanel.log('ERROR', 'Unhandled promise rejection', {
+            reason: e.reason,
+            promise: String(e.promise)
+        });
+    });
+}
 
 document.getElementById('github').addEventListener('click', e => {
     window.open('https://github.com/nagix/gtfs-box', '_blank');
@@ -695,19 +802,103 @@ const routeControl = new RouteControl({
 });
 
 map.on('load', () => {
+    if (window.debugPanel) {
+        window.debugPanel.log('INFO', 'Map load event triggered');
+
+        // Log deck.gl/WebGL info
+        try {
+            const underlyingMap = map.getMapboxMap ? map.getMapboxMap() : null;
+            if (underlyingMap && underlyingMap.painter && underlyingMap.painter.context) {
+                const gl = underlyingMap.painter.context.gl;
+                window.debugPanel.log('INFO', 'WebGL context information', {
+                    version: gl.getParameter(gl.VERSION),
+                    vendor: gl.getParameter(gl.VENDOR),
+                    renderer: gl.getParameter(gl.RENDERER),
+                    maxTextureSize: gl.getParameter(gl.MAX_TEXTURE_SIZE)
+                });
+            }
+        } catch (err) {
+            window.debugPanel.log('WARN', 'Could not get WebGL context info', { error: err.message });
+        }
+
+        // Monitor map style changes (deck.gl layers get added here)
+        try {
+            const underlyingMap = map.getMapboxMap ? map.getMapboxMap() : null;
+            if (underlyingMap) {
+                underlyingMap.on('styledata', () => {
+                    window.debugPanel.log('INFO', 'Style data loaded/changed', {
+                        layers: underlyingMap.style._order ? underlyingMap.style._order.length : 0,
+                        sources: Object.keys(underlyingMap.style.sourceCaches || {}).length
+                    });
+                });
+            }
+        } catch (err) {
+            window.debugPanel.log('WARN', 'Could not monitor style changes', { error: err.message });
+        }
+    }
+
     let prevGtfsKeys = '';
+    let updateCount = 0;
 
     setInterval(() => {
+        const intervalStartTime = performance.now();
+        updateCount++;
+
         const gtfsKeys = [...map.gtfs.keys()].join(),
             mbox = map.getMapboxMap();
 
         if (prevGtfsKeys !== gtfsKeys) {
+            if (window.debugPanel) {
+                window.debugPanel.log('INFO', 'GTFS data changed, refreshing routes', {
+                    previousKeys: prevGtfsKeys || '(empty)',
+                    newKeys: gtfsKeys,
+                    updateCount: updateCount
+                });
+
+                // Log if we're about to trigger 3D rendering
+                try {
+                    const gtfsCount = map.gtfs.size;
+                    let totalVehicles = 0;
+                    for (const gtfs of map.gtfs.values()) {
+                        if (gtfs.vehicles && Array.isArray(gtfs.vehicles)) {
+                            totalVehicles += gtfs.vehicles.length;
+                        }
+                    }
+
+                    if (totalVehicles > 0) {
+                        window.debugPanel.log('WARN', `About to render ${totalVehicles} 3D vehicles - this may trigger freeze`, {
+                            totalVehicles,
+                            gtfsSourceCount: gtfsCount
+                        });
+                    }
+                } catch (err) {
+                    window.debugPanel.log('DEBUG', 'Could not count vehicles', { error: err.message });
+                }
+            }
+
+            const routesBuildStartTime = performance.now();
             const routes = [];
 
             if (!mbox.hasControl(routeControl)) {
                 mbox.addControl(routeControl);
+                if (window.debugPanel) {
+                    window.debugPanel.log('INFO', 'Route control added to map');
+                }
             }
+
+            let totalRouteCount = 0;
             for (const gtfs of map.gtfs.values()) {
+                const routeCount = gtfs.routeLookup.size;
+                totalRouteCount += routeCount;
+
+                if (window.debugPanel) {
+                    window.debugPanel.log('DEBUG', `Processing GTFS data source: ${gtfs.agency}`, {
+                        gtfsId: gtfs.id,
+                        routeCount: routeCount,
+                        agency: gtfs.agency
+                    });
+                }
+
                 for (const route of gtfs.routeLookup.values()) {
                     const {id, shortName, longName, color, textColor} = route;
 
@@ -721,13 +912,76 @@ map.on('load', () => {
                     });
                 }
             }
-            routeControl.refresh(routes.sort((a, b) => {
+
+            const routesBuildDuration = performance.now() - routesBuildStartTime;
+            if (window.debugPanel) {
+                window.debugPanel.recordPerformance('Route List Build', routesBuildDuration);
+                window.debugPanel.log('DEBUG', `Built route list in ${routesBuildDuration.toFixed(2)}ms`, {
+                    totalRoutes: totalRouteCount
+                });
+            }
+
+            const sortStartTime = performance.now();
+            const sortedRoutes = routes.sort((a, b) => {
                 const nameA = (a.shortName + a.longName).toUpperCase(),
                     nameB = (b.shortName + b.longName).toUpperCase();
 
                 return nameA < nameB ? -1 : nameA > nameB ? 1 : 0;
-            }));
+            });
+            const sortDuration = performance.now() - sortStartTime;
+
+            if (window.debugPanel) {
+                window.debugPanel.recordPerformance('Route Sort', sortDuration);
+            }
+
+            routeControl.refresh(sortedRoutes);
             prevGtfsKeys = gtfsKeys;
+
+            const totalDuration = performance.now() - intervalStartTime;
+            if (window.debugPanel) {
+                window.debugPanel.recordPerformance('Route Update Cycle (Full)', totalDuration);
+                if (totalDuration > 50) {
+                    window.debugPanel.log('WARN', `Slow route update cycle: ${totalDuration.toFixed(2)}ms`, {
+                        routesBuildDuration: routesBuildDuration.toFixed(2),
+                        sortDuration: sortDuration.toFixed(2),
+                        routeCount: routes.length
+                    });
+                }
+            }
+        } else {
+            // Log periodic checks (but less frequently to avoid spam)
+            if (updateCount % 60 === 0 && window.debugPanel) {
+                window.debugPanel.log('DEBUG', `Route update check #${updateCount} - no changes`);
+            }
+        }
+
+        const intervalDuration = performance.now() - intervalStartTime;
+        if (intervalDuration > 100 && window.debugPanel) {
+            window.debugPanel.log('WARN', `Route update interval took ${intervalDuration.toFixed(2)}ms (threshold: 100ms)`);
         }
     }, 1000);
+
+    // Monitor GTFS data updates
+    if (window.debugPanel) {
+        setInterval(() => {
+            const gtfsCount = map.gtfs.size;
+            if (gtfsCount > 0) {
+                const gtfsInfo = [];
+                for (const [key, gtfs] of map.gtfs.entries()) {
+                    gtfsInfo.push({
+                        id: key,
+                        agency: gtfs.agency,
+                        routes: gtfs.routeLookup.size,
+                        // Check if vehicles property exists
+                        vehicles: gtfs.vehicles ? gtfs.vehicles.length : 'N/A'
+                    });
+                }
+
+                window.debugPanel.log('DEBUG', `GTFS data status check`, {
+                    dataSourceCount: gtfsCount,
+                    sources: gtfsInfo
+                });
+            }
+        }, 30000); // Every 30 seconds
+    }
 });
