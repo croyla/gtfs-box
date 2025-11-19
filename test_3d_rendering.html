@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>3D Rendering Test - GTFS Box</title>
+
+    <!-- MapLibre GL JS -->
+    <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.5.2/dist/maplibre-gl.css" />
+    <script src="https://unpkg.com/maplibre-gl@4.5.2/dist/maplibre-gl.js"></script>
+
+    <!-- Deck.gl -->
+    <script src="https://unpkg.com/deck.gl@latest/dist.min.js"></script>
+
+    <!-- Debug Panel -->
+    <link rel="stylesheet" href="debug.css">
+    <script src="debug.js"></script>
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        #map {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 100%;
+        }
+        #test-info {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            max-width: 400px;
+            z-index: 1000;
+            font-size: 13px;
+        }
+        #test-info h3 {
+            margin: 0 0 10px 0;
+            font-size: 16px;
+            color: #333;
+        }
+        #test-info button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px 5px 0 0;
+            font-size: 12px;
+        }
+        #test-info button:hover {
+            background: #0056b3;
+        }
+        #test-info button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .info-item {
+            margin: 8px 0;
+            padding: 8px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        .info-label {
+            font-weight: 600;
+            color: #495057;
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    <div id="test-info">
+        <h3>🧪 3D Rendering Test</h3>
+        <div class="info-item">
+            <div class="info-label">Purpose:</div>
+            Test deck.gl 3D rendering without GTFS data
+        </div>
+        <div class="info-item">
+            <div class="info-label">Test Steps:</div>
+            1. Initialize MapLibre<br>
+            2. Add deck.gl custom layer<br>
+            3. Render sample vehicles (10, 50, 100)<br>
+            4. Monitor for freezes
+        </div>
+        <div>
+            <button id="test-10">Add 10 Vehicles</button>
+            <button id="test-50">Add 50 Vehicles</button>
+            <button id="test-100">Add 100 Vehicles</button>
+            <button id="clear">Clear All</button>
+        </div>
+    </div>
+
+    <script>
+        // Initialize debug panel
+        if (window.debugPanel) {
+            window.debugPanel.log('INFO', '🧪 3D Rendering Test initialized');
+            window.debugPanel.enable();
+            // Auto-open debug panel
+            setTimeout(() => {
+                if (window.debugPanel && !window.debugPanel.isOpen) {
+                    window.debugPanel.toggle();
+                }
+            }, 100);
+        }
+
+        // Sample vehicle data generator
+        function generateVehicles(count, center = [77.61, 12.95]) {
+            if (window.debugPanel) {
+                window.debugPanel.log('INFO', `Generating ${count} sample vehicles`, {
+                    center,
+                    timestamp: performance.now()
+                });
+            }
+
+            const vehicles = [];
+            const radius = 0.05; // ~5km spread
+
+            for (let i = 0; i < count; i++) {
+                // Random position around center
+                const angle = Math.random() * 2 * Math.PI;
+                const distance = Math.random() * radius;
+
+                vehicles.push({
+                    id: `vehicle_${i}`,
+                    position: [
+                        center[0] + Math.cos(angle) * distance,
+                        center[1] + Math.sin(angle) * distance,
+                        0 // altitude
+                    ],
+                    bearing: Math.random() * 360,
+                    color: [
+                        Math.floor(Math.random() * 255),
+                        Math.floor(Math.random() * 255),
+                        Math.floor(Math.random() * 255)
+                    ],
+                    speed: Math.random() * 60 // 0-60 km/h
+                });
+            }
+
+            if (window.debugPanel) {
+                window.debugPanel.log('INFO', `✅ Generated ${count} vehicles`, {
+                    sampleVehicle: vehicles[0]
+                });
+            }
+
+            return vehicles;
+        }
+
+        // Initialize MapLibre map
+        if (window.debugPanel) {
+            window.debugPanel.log('INFO', 'Initializing MapLibre GL map');
+        }
+
+        const mapStartTime = performance.now();
+        const map = new maplibregl.Map({
+            container: 'map',
+            style: 'assets/style.json',
+            center: [77.61, 12.95],
+            zoom: 12,
+            pitch: 60,
+            bearing: 0
+        });
+
+        const mapInitDuration = performance.now() - mapStartTime;
+        if (window.debugPanel) {
+            window.debugPanel.log('INFO', `Map initialized in ${mapInitDuration.toFixed(2)}ms`);
+            window.debugPanel.recordPerformance('Map Initialization', mapInitDuration);
+        }
+
+        let deckOverlay = null;
+        let currentVehicles = [];
+
+        map.on('load', () => {
+            if (window.debugPanel) {
+                window.debugPanel.log('INFO', 'Map load event fired');
+            }
+
+            // Add navigation controls
+            map.addControl(new maplibregl.NavigationControl());
+
+            if (window.debugPanel) {
+                window.debugPanel.log('INFO', 'Ready for deck.gl layer tests');
+            }
+        });
+
+        function createDeckOverlay(vehicles) {
+            if (window.debugPanel) {
+                window.debugPanel.log('WARN', `🎨 Creating deck.gl overlay with ${vehicles.length} vehicles - may cause freeze`, {
+                    vehicleCount: vehicles.length,
+                    timestamp: performance.now()
+                });
+            }
+
+            const startTime = performance.now();
+
+            try {
+                // Create IconLayer for 3D vehicle icons
+                const iconLayer = new deck.IconLayer({
+                    id: 'vehicle-icons',
+                    data: vehicles,
+                    getPosition: d => d.position,
+                    getIcon: d => ({
+                        url: 'data:image/svg+xml;base64,' + btoa(`
+                            <svg width="32" height="32" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="16" cy="16" r="8" fill="rgb(${d.color[0]},${d.color[1]},${d.color[2]})" stroke="white" stroke-width="2"/>
+                                <line x1="16" y1="16" x2="16" y2="8" stroke="white" stroke-width="2"/>
+                            </svg>
+                        `),
+                        width: 32,
+                        height: 32
+                    }),
+                    getSize: 32,
+                    getAngle: d => -d.bearing,
+                    sizeScale: 1,
+                    sizeUnits: 'pixels',
+                    pickable: true
+                });
+
+                if (window.debugPanel) {
+                    const layerCreationDuration = performance.now() - startTime;
+                    window.debugPanel.log('DEBUG', `IconLayer created in ${layerCreationDuration.toFixed(2)}ms`);
+                    window.debugPanel.recordPerformance('Deck.gl Layer Creation', layerCreationDuration);
+                }
+
+                // Create MapLibre custom layer wrapper
+                const deckLayerStartTime = performance.now();
+
+                const deckLayer = {
+                    id: 'deck-overlay',
+                    type: 'custom',
+                    renderingMode: '3d',
+                    onAdd: function(map, gl) {
+                        if (window.debugPanel) {
+                            window.debugPanel.log('INFO', 'deck.gl layer onAdd() called', {
+                                timestamp: performance.now()
+                            });
+                        }
+
+                        const onAddStart = performance.now();
+
+                        deckOverlay = new deck.MapboxLayer({
+                            id: 'deck-overlay',
+                            deck: new deck.Deck({
+                                gl: gl,
+                                layers: [iconLayer]
+                            })
+                        });
+
+                        const onAddDuration = performance.now() - onAddStart;
+                        if (window.debugPanel) {
+                            window.debugPanel.log('INFO', `✅ deck.gl overlay initialized in ${onAddDuration.toFixed(2)}ms`);
+                            window.debugPanel.recordPerformance('Deck.gl onAdd', onAddDuration);
+                        }
+                    },
+                    render: function(gl, matrix) {
+                        // Log first render only to avoid spam
+                        if (!this._firstRenderLogged && window.debugPanel) {
+                            window.debugPanel.log('INFO', 'deck.gl first render() called');
+                            this._firstRenderLogged = true;
+                        }
+
+                        if (deckOverlay) {
+                            const renderStart = performance.now();
+                            deckOverlay.render(gl, matrix);
+                            const renderDuration = performance.now() - renderStart;
+
+                            // Only log slow renders
+                            if (renderDuration > 16.67 && window.debugPanel) {
+                                window.debugPanel.log('WARN', `Slow render: ${renderDuration.toFixed(2)}ms (>16.67ms/60fps)`, {
+                                    renderDuration
+                                });
+                            }
+                        }
+                    }
+                };
+
+                if (window.debugPanel) {
+                    window.debugPanel.log('INFO', '🔄 Adding deck.gl layer to map - this may freeze', {
+                        timestamp: performance.now()
+                    });
+                }
+
+                const addLayerStart = performance.now();
+                map.addLayer(deckLayer);
+                const addLayerDuration = performance.now() - addLayerStart;
+
+                if (window.debugPanel) {
+                    window.debugPanel.log('INFO', `✅ Layer added to map in ${addLayerDuration.toFixed(2)}ms`);
+                    window.debugPanel.recordPerformance('Map addLayer', addLayerDuration);
+                }
+
+                const totalDuration = performance.now() - startTime;
+                if (window.debugPanel) {
+                    window.debugPanel.recordPerformance('Total Deck.gl Setup', totalDuration);
+
+                    if (totalDuration > 100) {
+                        window.debugPanel.log('ERROR', `⚠️ Deck.gl setup took ${totalDuration.toFixed(2)}ms - FREEZE DETECTED`, {
+                            totalDuration,
+                            vehicleCount: vehicles.length
+                        });
+                    } else {
+                        window.debugPanel.log('INFO', `✅ Total deck.gl setup: ${totalDuration.toFixed(2)}ms`);
+                    }
+                }
+
+            } catch (error) {
+                if (window.debugPanel) {
+                    window.debugPanel.log('ERROR', 'Failed to create deck.gl overlay', {
+                        error: error.message,
+                        stack: error.stack
+                    });
+                }
+                console.error('Deck.gl error:', error);
+            }
+        }
+
+        function clearLayers() {
+            if (window.debugPanel) {
+                window.debugPanel.log('INFO', 'Clearing all layers');
+            }
+
+            try {
+                if (map.getLayer('deck-overlay')) {
+                    map.removeLayer('deck-overlay');
+                }
+                deckOverlay = null;
+                currentVehicles = [];
+
+                if (window.debugPanel) {
+                    window.debugPanel.log('INFO', '✅ Layers cleared');
+                }
+            } catch (error) {
+                if (window.debugPanel) {
+                    window.debugPanel.log('ERROR', 'Failed to clear layers', {
+                        error: error.message
+                    });
+                }
+            }
+        }
+
+        // Button handlers
+        document.getElementById('test-10').addEventListener('click', () => {
+            if (window.debugPanel) {
+                window.debugPanel.log('INFO', '===== TEST: 10 VEHICLES =====');
+            }
+            clearLayers();
+            currentVehicles = generateVehicles(10);
+            createDeckOverlay(currentVehicles);
+        });
+
+        document.getElementById('test-50').addEventListener('click', () => {
+            if (window.debugPanel) {
+                window.debugPanel.log('INFO', '===== TEST: 50 VEHICLES =====');
+            }
+            clearLayers();
+            currentVehicles = generateVehicles(50);
+            createDeckOverlay(currentVehicles);
+        });
+
+        document.getElementById('test-100').addEventListener('click', () => {
+            if (window.debugPanel) {
+                window.debugPanel.log('INFO', '===== TEST: 100 VEHICLES =====');
+            }
+            clearLayers();
+            currentVehicles = generateVehicles(100);
+            createDeckOverlay(currentVehicles);
+        });
+
+        document.getElementById('clear').addEventListener('click', () => {
+            if (window.debugPanel) {
+                window.debugPanel.log('INFO', '===== CLEARING LAYERS =====');
+            }
+            clearLayers();
+        });
+
+        // Monitor for errors
+        window.addEventListener('error', (e) => {
+            if (window.debugPanel) {
+                window.debugPanel.log('ERROR', 'Global error caught', {
+                    message: e.message,
+                    filename: e.filename,
+                    lineno: e.lineno,
+                    colno: e.colno
+                });
+            }
+        });
+    </script>
+</body>
+</html>
