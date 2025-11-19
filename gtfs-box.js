@@ -426,13 +426,7 @@ class RouteControl {
 
         // Log route control refresh
         if (window.debugPanel) {
-            const startTime = performance.now();
             window.debugPanel.log('DEBUG', `Route control refresh started with ${routes.length} routes`);
-
-            setTimeout(() => {
-                const duration = performance.now() - startTime;
-                window.debugPanel.recordPerformance('Route Control Refresh', duration);
-            }, 0);
         }
 
         if (routes.length === 0) {
@@ -444,6 +438,13 @@ class RouteControl {
         }
 
         container.style.display = 'block';
+
+        // Log before DOM manipulation
+        if (window.debugPanel) {
+            window.debugPanel.log('DEBUG', `📝 Starting innerHTML generation for ${routes.length} routes`);
+        }
+        const htmlGenStartTime = performance.now();
+
         element.innerHTML = [
             '<div class="route-header">',
             '<div>',
@@ -472,7 +473,19 @@ class RouteControl {
             '</div>'
         ].join('');
 
+        const htmlGenDuration = performance.now() - htmlGenStartTime;
+        if (window.debugPanel) {
+            window.debugPanel.log('DEBUG', `✅ innerHTML generated and assigned in ${htmlGenDuration.toFixed(2)}ms`);
+            window.debugPanel.recordPerformance('Route Control innerHTML', htmlGenDuration);
+        }
+
         container.style.height = height();
+
+        // Log before event listener setup
+        if (window.debugPanel) {
+            window.debugPanel.log('DEBUG', `🔗 Setting up ${routes.length + 1} event listeners`);
+        }
+        const eventSetupStartTime = performance.now();
 
         document.getElementById('route-expand-button').addEventListener('click', () => {
             container.classList.toggle('expanded');
@@ -519,6 +532,12 @@ class RouteControl {
             element.addEventListener('mouseleave', () => {
                 me._onSelect();
             });
+        }
+
+        const eventSetupDuration = performance.now() - eventSetupStartTime;
+        if (window.debugPanel) {
+            window.debugPanel.log('DEBUG', `✅ Event listeners setup complete in ${eventSetupDuration.toFixed(2)}ms`);
+            window.debugPanel.recordPerformance('Route Control Event Setup', eventSetupDuration);
         }
     }
 
@@ -754,7 +773,25 @@ document.getElementById('toggle').addEventListener('click', e => {
     }
 });
 configContainer.addEventListener('transitionend', e => {
-    map.getMapboxMap().resize();
+    try {
+        if (window.debugPanel) {
+            window.debugPanel.log('DEBUG', 'Config transition ended, resizing map');
+        }
+
+        const underlyingMap = map.getMapboxMap ? map.getMapboxMap() : (map.getMap ? map.getMap() : null);
+        if (underlyingMap && typeof underlyingMap.resize === 'function') {
+            underlyingMap.resize();
+        } else {
+            // Fallback: try calling resize directly on map object
+            if (typeof map.resize === 'function') {
+                map.resize();
+            }
+        }
+    } catch (err) {
+        if (window.debugPanel) {
+            window.debugPanel.log('ERROR', 'Failed to resize map after transition', { error: err.message });
+        }
+    }
 });
 
 document.getElementById('location').addEventListener('click', e => {
@@ -896,8 +933,23 @@ map.on('load', () => {
         const intervalStartTime = performance.now();
         updateCount++;
 
-        const gtfsKeys = [...map.gtfs.keys()].join(),
-            mbox = map.getMapboxMap();
+        const gtfsKeys = [...map.gtfs.keys()].join();
+
+        let mbox;
+        try {
+            mbox = map.getMapboxMap ? map.getMapboxMap() : (map.getMap ? map.getMap() : null);
+            if (!mbox) {
+                if (window.debugPanel && updateCount === 1) {
+                    window.debugPanel.log('ERROR', 'Could not access underlying map instance in route update interval');
+                }
+                return;
+            }
+        } catch (err) {
+            if (window.debugPanel && updateCount === 1) {
+                window.debugPanel.log('ERROR', 'Exception accessing underlying map', { error: err.message });
+            }
+            return;
+        }
 
         if (prevGtfsKeys !== gtfsKeys) {
             if (window.debugPanel) {
@@ -984,9 +1036,31 @@ map.on('load', () => {
 
             if (window.debugPanel) {
                 window.debugPanel.recordPerformance('Route Sort', sortDuration);
+                window.debugPanel.log('INFO', `🔄 About to refresh route control UI with ${sortedRoutes.length} routes - may cause brief freeze`, {
+                    routeCount: sortedRoutes.length,
+                    timestamp: performance.now()
+                });
             }
 
-            routeControl.refresh(sortedRoutes);
+            const refreshStartTime = performance.now();
+            try {
+                routeControl.refresh(sortedRoutes);
+            } catch (err) {
+                if (window.debugPanel) {
+                    window.debugPanel.log('ERROR', 'Route control refresh failed', { error: err.message, stack: err.stack });
+                }
+            }
+            const refreshDuration = performance.now() - refreshStartTime;
+
+            if (window.debugPanel) {
+                window.debugPanel.recordPerformance('Route Control DOM Refresh', refreshDuration);
+                if (refreshDuration > 50) {
+                    window.debugPanel.log('WARN', `⚠️ Route control refresh took ${refreshDuration.toFixed(2)}ms (may cause freeze)`, {
+                        routeCount: sortedRoutes.length
+                    });
+                }
+            }
+
             prevGtfsKeys = gtfsKeys;
 
             const totalDuration = performance.now() - intervalStartTime;
