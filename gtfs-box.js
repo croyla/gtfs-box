@@ -771,14 +771,34 @@ if (window.debugPanel) {
                 });
 
                 // IMMEDIATELY check if scrollZoom is enabled (before async checks)
-                if (underlyingMap.scrollZoom) {
-                    window.debugPanel.log('INFO', '⚡ IMMEDIATE scrollZoom status', {
-                        isEnabled: underlyingMap.scrollZoom.isEnabled ? underlyingMap.scrollZoom.isEnabled() : 'no method',
-                        isActive: underlyingMap.scrollZoom.isActive ? underlyingMap.scrollZoom.isActive() : 'no method',
-                        type: typeof underlyingMap.scrollZoom,
-                        hasEnable: typeof underlyingMap.scrollZoom.enable === 'function',
-                        hasDisable: typeof underlyingMap.scrollZoom.disable === 'function'
-                    });
+                window.debugPanel.log('INFO', '⚡ IMMEDIATE scrollZoom check', {
+                    exists: !!underlyingMap.scrollZoom,
+                    type: typeof underlyingMap.scrollZoom,
+                    value: underlyingMap.scrollZoom,
+                    isEnabled: underlyingMap.scrollZoom && underlyingMap.scrollZoom.isEnabled ? underlyingMap.scrollZoom.isEnabled() : 'N/A',
+                    hasEnableMethod: underlyingMap.scrollZoom && typeof underlyingMap.scrollZoom.enable === 'function'
+                });
+
+                // CRITICAL FIX: Force re-enable scrollZoom if it exists but is disabled
+                if (underlyingMap.scrollZoom && typeof underlyingMap.scrollZoom.enable === 'function') {
+                    try {
+                        const wasEnabled = underlyingMap.scrollZoom.isEnabled ? underlyingMap.scrollZoom.isEnabled() : null;
+                        window.debugPanel.log('INFO', `scrollZoom status before fix: ${wasEnabled}`);
+
+                        if (wasEnabled === false) {
+                            window.debugPanel.log('ERROR', '💥 scrollZoom was DISABLED! Re-enabling now...');
+                            underlyingMap.scrollZoom.enable();
+                            window.debugPanel.log('INFO', '✅ scrollZoom re-enabled');
+                        } else {
+                            // Force enable anyway to be safe
+                            underlyingMap.scrollZoom.enable();
+                            window.debugPanel.log('INFO', '✅ Force-enabled scrollZoom');
+                        }
+                    } catch (err) {
+                        window.debugPanel.log('ERROR', 'Failed to enable scrollZoom', { error: err.message });
+                    }
+                } else {
+                    window.debugPanel.log('ERROR', '❌ scrollZoom handler not found or has no enable method!');
                 }
 
                 // CRITICAL: Monitor DOM events after zoomstart to see if they're blocked
