@@ -1,0 +1,330 @@
+/* Debug Panel Styles */
+
+.debug-toggle {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: #2c3e50;
+    color: white;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    z-index: 10000;
+    transition: all 0.3s ease;
+}
+
+.debug-toggle:hover {
+    background: #34495e;
+    transform: scale(1.1);
+}
+
+.debug-panel {
+    position: fixed;
+    bottom: 80px;
+    right: 20px;
+    width: 600px;
+    max-width: calc(100vw - 40px);
+    height: 500px;
+    max-height: calc(100vh - 120px);
+    background: #1e1e1e;
+    border: 1px solid #3e3e3e;
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 12px;
+    color: #d4d4d4;
+    transition: all 0.3s ease;
+}
+
+.debug-panel.hidden {
+    display: none;
+}
+
+.debug-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: #252526;
+    border-bottom: 1px solid #3e3e3e;
+    border-radius: 8px 8px 0 0;
+}
+
+.debug-title {
+    font-weight: bold;
+    font-size: 14px;
+    color: #4fc3f7;
+}
+
+.debug-controls {
+    display: flex;
+    gap: 8px;
+}
+
+.debug-controls button {
+    background: transparent;
+    border: none;
+    color: #d4d4d4;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: background 0.2s;
+}
+
+.debug-controls button:hover {
+    background: #3e3e3e;
+}
+
+.debug-stats {
+    display: flex;
+    gap: 16px;
+    padding: 8px 16px;
+    background: #1e1e1e;
+    border-bottom: 1px solid #3e3e3e;
+    flex-wrap: wrap;
+}
+
+.stat {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.stat-label {
+    color: #858585;
+    font-size: 11px;
+}
+
+.stat-value {
+    color: #4fc3f7;
+    font-weight: bold;
+}
+
+.debug-tabs {
+    display: flex;
+    background: #252526;
+    border-bottom: 1px solid #3e3e3e;
+}
+
+.debug-tab {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: #858585;
+    padding: 10px 16px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    font-size: 12px;
+}
+
+.debug-tab:hover {
+    background: #2d2d2d;
+    color: #d4d4d4;
+}
+
+.debug-tab.active {
+    color: #4fc3f7;
+    border-bottom-color: #4fc3f7;
+}
+
+.debug-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px;
+}
+
+.debug-tab-content {
+    display: none;
+}
+
+.debug-tab-content.active {
+    display: block;
+}
+
+/* Logs Tab */
+.log-entry {
+    padding: 6px 8px;
+    margin-bottom: 4px;
+    border-left: 3px solid #4fc3f7;
+    background: #252526;
+    border-radius: 2px;
+    font-size: 11px;
+    line-height: 1.4;
+}
+
+.log-entry.log-error {
+    border-left-color: #ff4444;
+    background: #2d1f1f;
+}
+
+.log-entry.log-warn {
+    border-left-color: #ffaa00;
+    background: #2d2a1f;
+}
+
+.log-entry.log-info {
+    border-left-color: #44ff44;
+}
+
+.log-time {
+    color: #858585;
+    margin-right: 8px;
+}
+
+.log-level {
+    color: #4fc3f7;
+    margin-right: 8px;
+    font-weight: bold;
+}
+
+.log-entry.log-error .log-level {
+    color: #ff4444;
+}
+
+.log-entry.log-warn .log-level {
+    color: #ffaa00;
+}
+
+.log-entry.log-info .log-level {
+    color: #44ff44;
+}
+
+.log-message {
+    color: #d4d4d4;
+}
+
+.log-entry pre {
+    margin: 6px 0 0 0;
+    padding: 8px;
+    background: #1e1e1e;
+    border-radius: 4px;
+    overflow-x: auto;
+    font-size: 10px;
+    color: #ce9178;
+}
+
+/* Network Tab */
+.network-entry {
+    padding: 10px;
+    margin-bottom: 8px;
+    background: #252526;
+    border-radius: 4px;
+    border-left: 3px solid #4fc3f7;
+}
+
+.network-entry.network-error {
+    border-left-color: #ff4444;
+    background: #2d1f1f;
+}
+
+.network-entry.network-pending {
+    border-left-color: #ffaa00;
+}
+
+.network-url {
+    color: #d4d4d4;
+    margin-bottom: 6px;
+    word-break: break-all;
+    font-size: 11px;
+}
+
+.network-details {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    font-size: 10px;
+}
+
+.network-method {
+    color: #4fc3f7;
+    font-weight: bold;
+}
+
+.network-duration {
+    color: #44ff44;
+}
+
+.network-size {
+    color: #ce9178;
+}
+
+.network-error-msg {
+    color: #ff4444;
+}
+
+/* Performance Tab */
+.perf-entry {
+    padding: 10px;
+    margin-bottom: 8px;
+    background: #252526;
+    border-radius: 4px;
+    border-left: 3px solid #4fc3f7;
+}
+
+.perf-name {
+    color: #d4d4d4;
+    margin-bottom: 6px;
+    font-weight: bold;
+    font-size: 11px;
+}
+
+.perf-stats {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    font-size: 10px;
+    color: #858585;
+}
+
+.perf-stats span {
+    color: #4fc3f7;
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    color: #858585;
+    padding: 40px 20px;
+    font-style: italic;
+}
+
+/* Scrollbar Styling */
+.debug-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.debug-content::-webkit-scrollbar-track {
+    background: #1e1e1e;
+}
+
+.debug-content::-webkit-scrollbar-thumb {
+    background: #3e3e3e;
+    border-radius: 4px;
+}
+
+.debug-content::-webkit-scrollbar-thumb:hover {
+    background: #4e4e4e;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .debug-panel {
+        width: calc(100vw - 40px);
+        height: 400px;
+    }
+
+    .debug-toggle {
+        width: 45px;
+        height: 45px;
+        font-size: 20px;
+    }
+}
