@@ -715,8 +715,83 @@ if (window.debugPanel) {
         if (underlyingMap) {
             window.debugPanel.log('INFO', 'Underlying map instance found', {
                 version: underlyingMap.version,
-                constructor: underlyingMap.constructor.name,
                 hasCustomLayers: underlyingMap.style && underlyingMap.style._layers ? Object.keys(underlyingMap.style._layers).length : 0
+            });
+
+            // CRITICAL: Track zoom events to debug unresponsiveness
+            let zoomEventCount = 0;
+            let lastZoomTime = 0;
+            let zoomInProgress = false;
+
+            underlyingMap.on('zoomstart', (e) => {
+                zoomInProgress = true;
+                zoomEventCount = 0;
+                lastZoomTime = performance.now();
+                window.debugPanel.log('INFO', '🔍 ZOOM START', {
+                    zoom: underlyingMap.getZoom(),
+                    center: underlyingMap.getCenter(),
+                    timestamp: new Date().toISOString()
+                });
+            });
+
+            underlyingMap.on('zoom', (e) => {
+                zoomEventCount++;
+                const now = performance.now();
+                const delta = now - lastZoomTime;
+                lastZoomTime = now;
+
+                // Log every 10th zoom event to avoid spam
+                if (zoomEventCount % 10 === 0) {
+                    window.debugPanel.log('DEBUG', `⚡ Zoom event #${zoomEventCount} (${delta.toFixed(1)}ms since last)`, {
+                        zoom: underlyingMap.getZoom(),
+                        fps: (1000 / delta).toFixed(1)
+                    });
+                }
+            });
+
+            underlyingMap.on('zoomend', (e) => {
+                const duration = performance.now() - lastZoomTime;
+                zoomInProgress = false;
+                window.debugPanel.log('INFO', '✅ ZOOM END', {
+                    finalZoom: underlyingMap.getZoom(),
+                    totalEvents: zoomEventCount,
+                    duration: `${duration.toFixed(1)}ms`,
+                    timestamp: new Date().toISOString()
+                });
+
+                // Check if map is still responsive after zoom
+                setTimeout(() => {
+                    try {
+                        const testZoom = underlyingMap.getZoom();
+                        const testCenter = underlyingMap.getCenter();
+                        window.debugPanel.log('INFO', '🧪 Post-zoom responsiveness check', {
+                            canGetZoom: testZoom !== undefined,
+                            canGetCenter: testCenter !== undefined,
+                            isLoaded: underlyingMap.loaded(),
+                            hasCanvas: !!underlyingMap.getCanvas()
+                        });
+                    } catch (err) {
+                        window.debugPanel.log('ERROR', '💥 Map became unresponsive after zoom!', {
+                            error: err.message,
+                            stack: err.stack
+                        });
+                    }
+                }, 100);
+            });
+
+            // Track move events too
+            let moveEventCount = 0;
+            underlyingMap.on('movestart', () => {
+                moveEventCount = 0;
+                window.debugPanel.log('DEBUG', '🚶 Move start');
+            });
+
+            underlyingMap.on('moveend', () => {
+                window.debugPanel.log('DEBUG', `🛑 Move end (${moveEventCount} events)`);
+            });
+
+            underlyingMap.on('move', () => {
+                moveEventCount++;
             });
 
             // Monitor render events
