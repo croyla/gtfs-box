@@ -116,6 +116,12 @@ body {
     width: 100% !important;
     height: 100% !important;
 }
+/* CRITICAL: Override touch-action to enable map interactions */
+/* MT3D sets touch-action: none which blocks ALL pointer/touch events */
+.content.mini-tokyo-3d,
+.mini-tokyo-3d {
+    touch-action: auto !important;
+}
 .content > #map,
 .content.mini-tokyo-3d > #map,
 .mini-tokyo-3d #map {
