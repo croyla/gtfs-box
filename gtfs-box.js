@@ -721,9 +721,32 @@ if (window.debugPanel) {
             // Minimal diagnostic logging - observe without interfering
             window.debugPanel.log('INFO', '🔍 Map ready - all interference removed');
 
-            //Simple zoom event logging
+            // Monitor wheel events at window level to check if input is being blocked
+            let wheelEventsSinceZoomstart = 0;
+            let zoomStarted = false;
+            window.addEventListener('wheel', (e) => {
+                if (zoomStarted) {
+                    wheelEventsSinceZoomstart++;
+                    if (wheelEventsSinceZoomstart <= 5 || wheelEventsSinceZoomstart % 10 === 0) {
+                        window.debugPanel.log('DEBUG', `🌐 Window wheel event #${wheelEventsSinceZoomstart}`, {
+                            deltaY: e.deltaY,
+                            target: e.target.tagName,
+                            defaultPrevented: e.defaultPrevented
+                        });
+                    }
+                }
+            }, { passive: true });
+
+            //Simple zoom event logging with internal state
             underlyingMap.on('zoomstart', (e) => {
-                window.debugPanel.log('INFO', '▶️ ZOOM START', { zoom: underlyingMap.getZoom().toFixed(2) });
+                zoomStarted = true;
+                wheelEventsSinceZoomstart = 0;
+                window.debugPanel.log('INFO', '▶️ ZOOM START', {
+                    zoom: underlyingMap.getZoom().toFixed(2),
+                    _zooming: underlyingMap._zooming,
+                    _rotating: underlyingMap._rotating,
+                    scrollZoomActive: underlyingMap.scrollZoom?._active
+                });
             });
 
             underlyingMap.on('zoom', (e) => {
@@ -731,7 +754,11 @@ if (window.debugPanel) {
             });
 
             underlyingMap.on('zoomend', (e) => {
-                window.debugPanel.log('INFO', '⏹️ ZOOM END', { zoom: underlyingMap.getZoom().toFixed(2) });
+                zoomStarted = false;
+                window.debugPanel.log('INFO', '⏹️ ZOOM END', {
+                    zoom: underlyingMap.getZoom().toFixed(2),
+                    wheelEventsReceived: wheelEventsSinceZoomstart
+                });
             });
 
             // Track move events
