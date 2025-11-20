@@ -721,6 +721,22 @@ if (window.debugPanel) {
             // CRITICAL: Protect event system from being wiped by MT3D
             const originalOff = underlyingMap.off;
 
+            // CRITICAL: Intercept scrollZoom.disable() to catch WHO is disabling it
+            if (underlyingMap.scrollZoom && underlyingMap.scrollZoom.disable) {
+                const originalDisable = underlyingMap.scrollZoom.disable.bind(underlyingMap.scrollZoom);
+                underlyingMap.scrollZoom.disable = function() {
+                    const stack = new Error().stack;
+                    window.debugPanel.log('ERROR', '💥 scrollZoom.disable() was called!', {
+                        stack: stack,
+                        caller: stack.split('\n')[2] // Show who called it
+                    });
+                    // Don't actually disable it - just log
+                    // return originalDisable();  // Commented out - prevent disabling!
+                    window.debugPanel.log('INFO', '🛡️ BLOCKED scrollZoom.disable() call');
+                };
+                window.debugPanel.log('INFO', '🛡️ Intercepted scrollZoom.disable() - will block all disable attempts');
+            }
+
             // Detect if event system gets destroyed
             const checkEventSystem = () => {
                 if (!underlyingMap._listeners || Object.keys(underlyingMap._listeners).length === 0) {
