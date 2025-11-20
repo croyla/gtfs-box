@@ -774,28 +774,41 @@ if (window.debugPanel) {
                 window.debugPanel.log('INFO', '⚡ IMMEDIATE scrollZoom check', {
                     exists: !!underlyingMap.scrollZoom,
                     type: typeof underlyingMap.scrollZoom,
-                    value: underlyingMap.scrollZoom,
+                    // Don't log the entire object - causes circular reference!
                     isEnabled: underlyingMap.scrollZoom && underlyingMap.scrollZoom.isEnabled ? underlyingMap.scrollZoom.isEnabled() : 'N/A',
                     hasEnableMethod: underlyingMap.scrollZoom && typeof underlyingMap.scrollZoom.enable === 'function'
                 });
 
-                // CRITICAL FIX: Force re-enable scrollZoom if it exists but is disabled
+                // CRITICAL FIX: CONTINUOUSLY force re-enable scrollZoom every 100ms for 5 seconds
+                // This aggressively fights MT3D's attempts to disable it
                 if (underlyingMap.scrollZoom && typeof underlyingMap.scrollZoom.enable === 'function') {
-                    try {
-                        const wasEnabled = underlyingMap.scrollZoom.isEnabled ? underlyingMap.scrollZoom.isEnabled() : null;
-                        window.debugPanel.log('INFO', `scrollZoom status before fix: ${wasEnabled}`);
+                    let enableCount = 0;
+                    const reenableInterval = setInterval(() => {
+                        try {
+                            const isEnabled = underlyingMap.scrollZoom.isEnabled ? underlyingMap.scrollZoom.isEnabled() : null;
 
-                        if (wasEnabled === false) {
-                            window.debugPanel.log('ERROR', '💥 scrollZoom was DISABLED! Re-enabling now...');
-                            underlyingMap.scrollZoom.enable();
-                            window.debugPanel.log('INFO', '✅ scrollZoom re-enabled');
-                        } else {
-                            // Force enable anyway to be safe
-                            underlyingMap.scrollZoom.enable();
-                            window.debugPanel.log('INFO', '✅ Force-enabled scrollZoom');
+                            if (!isEnabled) {
+                                underlyingMap.scrollZoom.enable();
+                                enableCount++;
+                                window.debugPanel.log('ERROR', `💥 scrollZoom disabled AGAIN! Re-enabled #${enableCount}`);
+                            }
+                        } catch (err) {
+                            window.debugPanel.log('ERROR', 'scrollZoom re-enable failed', { error: err.message });
                         }
+                    }, 100); // Check every 100ms
+
+                    // Stop after 5 seconds
+                    setTimeout(() => {
+                        clearInterval(reenableInterval);
+                        window.debugPanel.log('INFO', `🛑 Stopped scrollZoom monitoring (re-enabled ${enableCount} times)`);
+                    }, 5000);
+
+                    // Also force enable immediately
+                    try {
+                        underlyingMap.scrollZoom.enable();
+                        window.debugPanel.log('INFO', '✅ Force-enabled scrollZoom (initial)');
                     } catch (err) {
-                        window.debugPanel.log('ERROR', 'Failed to enable scrollZoom', { error: err.message });
+                        window.debugPanel.log('ERROR', 'Initial enable failed', { error: err.message });
                     }
                 } else {
                     window.debugPanel.log('ERROR', '❌ scrollZoom handler not found or has no enable method!');
