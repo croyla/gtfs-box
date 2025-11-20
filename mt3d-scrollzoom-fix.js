@@ -1,28 +1,31 @@
 /**
- * MT3D ScrollZoom Fix v2
+ * MT3D ScrollZoom Fix v3 - Comprehensive Diagnostic
  *
- * Root Cause Discovery (from debug logs):
- * - Canvas wheel #2: scrollZoomActive becomes true (scrollZoom activates)
- * - 7ms later at zoomstart: scrollZoomActive is false (something cancelled it)
- * - After zoomstart: scrollZoomActive becomes true again (MT3D's workaround)
- * - But scrollZoom is broken and can't process events anymore
+ * Problem: Zoomstart fires with scrollZoomActive: false
+ * - Zoomstart should only fire when scrollZoom activates
+ * - But logs show zoomstart with scrollZoomActive: false
+ * - Then scrollZoom becomes active AFTER zoomstart
+ * - This creates a broken state where zoom events fire but scrollZoom can't process them
  *
- * Something between scrollZoom activation and zoomstart is calling map.jumpTo()
- * which disrupts scrollZoom. Then MT3D tries to fix it by setting _active = true,
- * but this creates a broken state.
+ * Diagnostic Approach:
+ * - Intercept ALL zoom-related methods (jumpTo, easeTo, flyTo, _jumpTo)
+ * - Intercept map.fire() to see what fires zoom events
+ * - Intercept scrollZoom.enable/disable to catch manipulation
+ * - Monitor scrollZoom._active changes every 10ms with stack traces
+ * - Prevent all zoom methods when scrollZoom is active
  *
- * Solution: Intercept both _jumpTo() and map.jumpTo() to prevent interference.
+ * This will reveal what's triggering zoomstart before scrollZoom activates.
  */
 
 (function() {
     'use strict';
 
-    console.log('[MT3D ScrollZoom Fix v2] Initializing...');
+    console.log('[MT3D ScrollZoom Fix v3] Initializing...');
 
     // Wait for MT3D to initialize
     const originalMt3dMap = window.mt3d?.Map;
     if (!originalMt3dMap) {
-        console.warn('[MT3D ScrollZoom Fix v2] mt3d.Map not found, will try after DOMContentLoaded');
+        console.warn('[MT3D ScrollZoom Fix v3] mt3d.Map not found, will try after DOMContentLoaded');
         document.addEventListener('DOMContentLoaded', () => {
             setTimeout(applyFix, 100);
         });
@@ -33,7 +36,7 @@
 
     function applyFix() {
         if (!window.mt3d?.Map) {
-            console.warn('[MT3D ScrollZoom Fix v2] mt3d.Map still not found');
+            console.warn('[MT3D ScrollZoom Fix v3] mt3d.Map still not found');
             return;
         }
 
@@ -45,14 +48,14 @@
 
             // Wait for map to be ready
             instance.once('initialized', () => {
-                console.log('[MT3D ScrollZoom Fix v2] Applying patches...');
+                console.log('[MT3D ScrollZoom Fix v3] Applying patches...');
 
                 // Get the underlying MapLibre map
                 const map = instance.getMapboxMap ? instance.getMapboxMap() :
                            (instance.getMap ? instance.getMap() : null);
 
                 if (!map) {
-                    console.warn('[MT3D ScrollZoom Fix v2] Could not access underlying map');
+                    console.warn('[MT3D ScrollZoom Fix v3] Could not access underlying map');
                     return;
                 }
 
@@ -73,7 +76,49 @@
                 // Monitor scrollZoom._active changes via setInterval
                 setInterval(checkScrollZoomState, 10);
 
-                // Store original jumpTo
+                // Intercept scrollZoom.disable() and enable() to see if it's being manipulated
+                const originalScrollZoomDisable = map.scrollZoom.disable;
+                map.scrollZoom.disable = function(...args) {
+                    if (window.debugPanel) {
+                        window.debugPanel.log('WARN', '⚠️ scrollZoom.disable() called', {
+                            scrollZoomActive: map.scrollZoom._active,
+                            stack: new Error().stack.split('\n').slice(2, 4).join(' | ')
+                        });
+                    }
+                    return originalScrollZoomDisable.apply(this, args);
+                };
+
+                const originalScrollZoomEnable = map.scrollZoom.enable;
+                map.scrollZoom.enable = function(...args) {
+                    if (window.debugPanel) {
+                        window.debugPanel.log('DEBUG', '✅ scrollZoom.enable() called', {
+                            scrollZoomActive: map.scrollZoom._active,
+                            stack: new Error().stack.split('\n').slice(2, 4).join(' | ')
+                        });
+                    }
+                    return originalScrollZoomEnable.apply(this, args);
+                };
+
+                // Intercept map.fire() to see what's triggering zoomstart
+                const originalFire = map.fire;
+                map.fire = function(event, ...args) {
+                    const eventType = typeof event === 'string' ? event : event.type;
+
+                    if (eventType && eventType.includes('zoom')) {
+                        const scrollZoomActive = map.scrollZoom?._active || false;
+                        if (window.debugPanel) {
+                            window.debugPanel.log('DEBUG', `🔥 map.fire('${eventType}')`, {
+                                scrollZoomActive,
+                                _zooming: map._zooming,
+                                stack: new Error().stack.split('\n').slice(2, 4).join(' | ')
+                            });
+                        }
+                    }
+
+                    return originalFire.call(this, event, ...args);
+                };
+
+                // Intercept zoom-triggering methods
                 const originalJumpTo = map.jumpTo;
                 map.jumpTo = function(...args) {
                     const scrollZoomActive = map.scrollZoom?._active || false;
@@ -97,10 +142,54 @@
                     return originalJumpTo.apply(this, args);
                 };
 
+                const originalEaseTo = map.easeTo;
+                map.easeTo = function(...args) {
+                    const scrollZoomActive = map.scrollZoom?._active || false;
+
+                    if (window.debugPanel) {
+                        window.debugPanel.log('DEBUG', '🎯 map.easeTo() called', {
+                            scrollZoomActive,
+                            _zooming: map._zooming,
+                            args: args.length > 0 ? JSON.stringify(args[0]).substring(0, 100) : 'none'
+                        });
+                    }
+
+                    if (scrollZoomActive) {
+                        if (window.debugPanel) {
+                            window.debugPanel.log('WARN', '🛡️ Prevented map.easeTo() during active scroll zoom');
+                        }
+                        return;
+                    }
+
+                    return originalEaseTo.apply(this, args);
+                };
+
+                const originalFlyTo = map.flyTo;
+                map.flyTo = function(...args) {
+                    const scrollZoomActive = map.scrollZoom?._active || false;
+
+                    if (window.debugPanel) {
+                        window.debugPanel.log('DEBUG', '🎯 map.flyTo() called', {
+                            scrollZoomActive,
+                            _zooming: map._zooming,
+                            args: args.length > 0 ? JSON.stringify(args[0]).substring(0, 100) : 'none'
+                        });
+                    }
+
+                    if (scrollZoomActive) {
+                        if (window.debugPanel) {
+                            window.debugPanel.log('WARN', '🛡️ Prevented map.flyTo() during active scroll zoom');
+                        }
+                        return;
+                    }
+
+                    return originalFlyTo.apply(this, args);
+                };
+
                 // Store original _jumpTo
                 const original_jumpTo = instance._jumpTo;
                 if (typeof original_jumpTo !== 'function') {
-                    console.warn('[MT3D ScrollZoom Fix v2] _jumpTo method not found');
+                    console.warn('[MT3D ScrollZoom Fix v3] _jumpTo method not found');
                     return;
                 }
 
@@ -129,12 +218,13 @@
                     return original_jumpTo.call(this, options);
                 };
 
-                console.log('[MT3D ScrollZoom Fix v2] Successfully patched jumpTo() and _jumpTo()');
+                console.log('[MT3D ScrollZoom Fix v3] Successfully patched all zoom-related methods');
 
                 if (window.debugPanel) {
-                    window.debugPanel.log('INFO', '✅ MT3D ScrollZoom Fix v2 applied', {
-                        method: 'Intercepted both map.jumpTo() and _jumpTo() to prevent interference',
-                        monitoring: 'scrollZoom._active state changes every 10ms'
+                    window.debugPanel.log('INFO', '✅ MT3D ScrollZoom Fix v3 applied', {
+                        intercepted: 'jumpTo, easeTo, flyTo, _jumpTo, fire, scrollZoom.enable/disable',
+                        monitoring: 'scrollZoom._active state changes every 10ms',
+                        purpose: 'Identify what triggers zoomstart with scrollZoom inactive'
                     });
                 }
             });
@@ -150,6 +240,6 @@
             }
         }
 
-        console.log('[MT3D ScrollZoom Fix v2] Wrapper installed successfully');
+        console.log('[MT3D ScrollZoom Fix v3] Wrapper installed successfully');
     }
 })();
