@@ -825,96 +825,38 @@ if (window.debugPanel) {
                     timestamp: new Date().toISOString()
                 });
 
-                // IMMEDIATELY check if scrollZoom is enabled (before async checks)
-                window.debugPanel.log('INFO', '⚡ IMMEDIATE scrollZoom check', {
+                // Check scrollZoom state (but DON'T manipulate it!)
+                window.debugPanel.log('INFO', '⚡ scrollZoom state check', {
                     exists: !!underlyingMap.scrollZoom,
-                    type: typeof underlyingMap.scrollZoom,
-                    // Don't log the entire object - causes circular reference!
                     isEnabled: underlyingMap.scrollZoom && underlyingMap.scrollZoom.isEnabled ? underlyingMap.scrollZoom.isEnabled() : 'N/A',
-                    hasEnableMethod: underlyingMap.scrollZoom && typeof underlyingMap.scrollZoom.enable === 'function'
+                    isActive: underlyingMap.scrollZoom && underlyingMap.scrollZoom._active !== undefined ? underlyingMap.scrollZoom._active : 'N/A'
                 });
 
-                // CRITICAL FIX: CONTINUOUSLY force re-enable scrollZoom every 100ms for 5 seconds
-                // This aggressively fights MT3D's attempts to disable it
-                if (underlyingMap.scrollZoom && typeof underlyingMap.scrollZoom.enable === 'function') {
-                    let enableCount = 0;
-                    const reenableInterval = setInterval(() => {
-                        try {
-                            const isEnabled = underlyingMap.scrollZoom.isEnabled ? underlyingMap.scrollZoom.isEnabled() : null;
-
-                            if (!isEnabled) {
-                                underlyingMap.scrollZoom.enable();
-                                enableCount++;
-                                window.debugPanel.log('ERROR', `💥 scrollZoom disabled AGAIN! Re-enabled #${enableCount}`);
-                            }
-                        } catch (err) {
-                            window.debugPanel.log('ERROR', 'scrollZoom re-enable failed', { error: err.message });
-                        }
-                    }, 100); // Check every 100ms
-
-                    // Stop after 5 seconds
-                    setTimeout(() => {
-                        clearInterval(reenableInterval);
-                        window.debugPanel.log('INFO', `🛑 Stopped scrollZoom monitoring (re-enabled ${enableCount} times)`);
-                    }, 5000);
-
-                    // Also force enable immediately
-                    try {
-                        underlyingMap.scrollZoom.enable();
-                        window.debugPanel.log('INFO', '✅ Force-enabled scrollZoom (initial)');
-                    } catch (err) {
-                        window.debugPanel.log('ERROR', 'Initial enable failed', { error: err.message });
-                    }
-                } else {
-                    window.debugPanel.log('ERROR', '❌ scrollZoom handler not found or has no enable method!');
-                }
-
-                // CRITICAL: Monitor DOM events after zoomstart to see if they're blocked
+                // Monitor DOM events to compare with MapLibre events
                 const canvas = underlyingMap.getCanvas();
                 if (canvas) {
                     let domWheelCount = 0;
-                    let domMouseCount = 0;
 
                     const wheelListener = (e) => {
                         domWheelCount++;
-                        window.debugPanel.log('DEBUG', `🎡 DOM wheel event #${domWheelCount}`, {
-                            deltaY: e.deltaY,
-                            defaultPrevented: e.defaultPrevented,
-                            propagationStopped: e.cancelBubble
-                        });
-                    };
-
-                    const mouseListener = (e) => {
-                        domMouseCount++;
-                        if (domMouseCount <= 3) {
-                            window.debugPanel.log('DEBUG', `🖱️ DOM mouse event #${domMouseCount}`, {
-                                type: e.type,
-                                button: e.button
+                        if (domWheelCount <= 10 || domWheelCount % 10 === 0) {
+                            window.debugPanel.log('DEBUG', `🎡 DOM wheel event #${domWheelCount}`, {
+                                deltaY: e.deltaY,
+                                defaultPrevented: e.defaultPrevented
                             });
                         }
                     };
 
                     canvas.addEventListener('wheel', wheelListener);
-                    canvas.addEventListener('mousedown', mouseListener);
 
-                    window.debugPanel.log('INFO', '✅ DOM event listeners attached', {
-                        canvasElement: !!canvas,
-                        hasWheelListener: true,
-                        hasMouseListener: true
-                    });
-
-                    // Clean up after 5 seconds
+                    // Clean up after zoom ends
                     setTimeout(() => {
                         canvas.removeEventListener('wheel', wheelListener);
-                        canvas.removeEventListener('mousedown', mouseListener);
-                        window.debugPanel.log('INFO', '🎡 DOM event monitoring complete', {
-                            wheelEvents: domWheelCount,
-                            mouseEvents: domMouseCount,
+                        window.debugPanel.log('INFO', '🎡 Zoom cycle complete', {
+                            domWheelEvents: domWheelCount,
                             mapZoomEvents: zoomEventCount
                         });
                     }, 5000);
-                } else {
-                    window.debugPanel.log('ERROR', '❌ Could not attach DOM listeners - no canvas!');
                 }
 
                 // Check if event system survives zoomstart
