@@ -852,6 +852,19 @@ if (window.debugPanel) {
                         mapLayers: underlyingMap.getStyle().layers.filter(l => l.id.includes('bus')).map(l => l.id)
                     });
 
+                    // Check MT3D clock status
+                    if (map.clock) {
+                        const clockTime = map.clock.getTime();
+                        const clockOffset = map.clock.getTimeOffset ? map.clock.getTimeOffset() : null;
+                        window.debugPanel.log('INFO', '⏰ MT3D Clock Status', {
+                            time: clockTime,
+                            timeISO: new Date(clockTime).toISOString(),
+                            offset: clockOffset,
+                            mode: map.clock.mode,
+                            speed: map.clock.speed
+                        });
+                    }
+
                     // Check for active buses
                     if (map.gtfs && map.gtfs.size > 0) {
                         for (const [gtfsId, gtfs] of map.gtfs.entries()) {
@@ -860,8 +873,42 @@ if (window.debugPanel) {
                                 activeBuses: gtfs.activeBusLookup ? gtfs.activeBusLookup.size : 0,
                                 realtimeBuses: gtfs.realtimeBuses ? gtfs.realtimeBuses.size : 0,
                                 routeCount: gtfs.routeLookup ? gtfs.routeLookup.size : 0,
+                                stopCount: gtfs.stopLookup ? gtfs.stopLookup.size : 0,
+                                tripCount: gtfs.tripLookup ? gtfs.tripLookup.size : 0,
                                 hasVehiclePositionUrl: !!gtfs.vehiclePositionUrl
                             });
+
+                            // Sample some trip departure times to see if they align with clock
+                            if (gtfs.tripLookup && gtfs.tripLookup.size > 0) {
+                                const sampleTrips = [];
+                                let count = 0;
+                                for (const [tripId, trip] of gtfs.tripLookup.entries()) {
+                                    if (count++ >= 5) break; // Sample first 5 trips
+                                    const route = gtfs.routeLookup.get(trip.route);
+                                    sampleTrips.push({
+                                        tripId,
+                                        routeId: trip.route,
+                                        routeHidden: route ? route.hidden : 'unknown',
+                                        departureTimes: trip.departureTimes ? trip.departureTimes.slice(0, 2) : null,
+                                        departureCount: trip.departureTimes ? trip.departureTimes.length : 0,
+                                        hasShape: !!trip.shape,
+                                        shapeExists: trip.shape ? !!gtfs.featureLookup.get(trip.shape) : false
+                                    });
+                                }
+                                window.debugPanel.log('INFO', '🚍 Sample Trips (first 5)', {
+                                    clockOffset: map.clock.getTimeOffset ? map.clock.getTimeOffset() : null,
+                                    trips: sampleTrips
+                                });
+                            }
+
+                            // Check if realtime buses data is being fetched
+                            if (gtfs.realtimeBuses) {
+                                window.debugPanel.log('INFO', '📡 Realtime Buses Collection', {
+                                    type: gtfs.realtimeBuses.constructor.name,
+                                    size: gtfs.realtimeBuses.size,
+                                    values: Array.from(gtfs.realtimeBuses).slice(0, 5) // First 5 entries
+                                });
+                            }
                         }
                     }
                 }
@@ -891,6 +938,83 @@ if (window.debugPanel) {
             promise: String(e.promise)
         });
     });
+
+    // Intercept fetch to monitor realtime feed requests
+    const originalFetch = window.fetch;
+    window.fetch = function(url, options) {
+        // Check if this is a GTFS realtime vehicle position request
+        if (typeof url === 'string' && (url.includes('gtfs-rt.proto') || url.includes('VehiclePosition') || url.includes('vehicle'))) {
+            if (window.debugPanel) {
+                window.debugPanel.log('INFO', '📡 Fetching realtime vehicle data', {
+                    url: url.substring(0, 100),
+                    method: options?.method || 'GET'
+                });
+            }
+
+            return originalFetch.apply(this, arguments).then(response => {
+                if (window.debugPanel) {
+                    // Clone response to read it without consuming the original
+                    const clonedResponse = response.clone();
+
+                    // Try to read as blob to get size
+                    clonedResponse.blob().then(blob => {
+                        window.debugPanel.log('INFO', '📦 Realtime feed response received', {
+                            status: response.status,
+                            ok: response.ok,
+                            contentType: response.headers.get('content-type'),
+                            contentLength: blob.size,
+                            url: url.substring(0, 100)
+                        });
+                    }).catch(err => {
+                        window.debugPanel.log('WARN', 'Could not read response blob', {
+                            error: err.message
+                        });
+                    });
+                }
+                return response;
+            }).catch(error => {
+                if (window.debugPanel) {
+                    window.debugPanel.log('ERROR', '❌ Realtime feed fetch failed', {
+                        url: url.substring(0, 100),
+                        error: error.message
+                    });
+                }
+                throw error;
+            });
+        }
+
+        return originalFetch.apply(this, arguments);
+    };
+
+    // Periodic check for buses appearing (every 10 seconds for first minute)
+    let checkCount = 0;
+    const periodicCheck = setInterval(() => {
+        checkCount++;
+        if (checkCount > 6) { // Stop after 6 checks (1 minute)
+            clearInterval(periodicCheck);
+            return;
+        }
+
+        if (window.debugPanel && map && map.gtfs) {
+            for (const [gtfsId, gtfs] of map.gtfs.entries()) {
+                const activeBusCount = gtfs.activeBusLookup ? gtfs.activeBusLookup.size : 0;
+                const realtimeBusCount = gtfs.realtimeBuses ? gtfs.realtimeBuses.size : 0;
+
+                if (activeBusCount > 0 || realtimeBusCount > 0) {
+                    window.debugPanel.log('INFO', `✅ Buses detected at ${checkCount * 10}s`, {
+                        activeBuses: activeBusCount,
+                        realtimeBuses: realtimeBusCount
+                    });
+                    clearInterval(periodicCheck); // Stop checking once we find buses
+                } else if (checkCount === 6) {
+                    // Last check and still no buses
+                    window.debugPanel.log('WARN', '⚠️ No buses after 60 seconds', {
+                        message: 'Check if realtime feed has active vehicles or if clock time matches schedule'
+                    });
+                }
+            }
+        }
+    }, 10000); // Check every 10 seconds
 }
 
 document.getElementById('github').addEventListener('click', e => {
