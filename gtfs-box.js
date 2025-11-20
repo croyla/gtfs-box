@@ -721,6 +721,47 @@ if (window.debugPanel) {
             // CRITICAL: Protect event system from being wiped by MT3D
             const originalOff = underlyingMap.off;
 
+            // CRITICAL FIX: Prevent MT3D from disabling scrollZoom via tracking mode
+            // MT3D disables scrollZoom when tracking vehicles (trains/buses/flights) in 3D modes
+            // Since GTFS Box doesn't use real-time vehicle tracking, force-disable tracking
+            window.debugPanel.log('INFO', '🔍 Checking MT3D tracking state', {
+                hasTrackedObject: !!map.trackedObject,
+                trackingMode: map.trackingMode,
+                trackedObject: map.trackedObject ? {
+                    type: map.trackedObject.type,
+                    id: map.trackedObject.id
+                } : null
+            });
+
+            // Force clear any tracked object (this triggers handler re-enable)
+            if (map.trackedObject) {
+                window.debugPanel.log('WARN', '⚠️ MT3D has a tracked object! Force-clearing it to prevent handler disable');
+                try {
+                    map.trackObject(null); // Clear tracked object
+                    window.debugPanel.log('INFO', '✅ Cleared tracked object');
+                } catch (err) {
+                    window.debugPanel.log('ERROR', 'Failed to clear tracked object', { error: err.message });
+                }
+            }
+
+            // Intercept trackObject to prevent MT3D from tracking anything in GTFS-only mode
+            const originalTrackObject = map.trackObject.bind(map);
+            map.trackObject = function(object) {
+                if (object && object.type !== 'station') {
+                    // Allow station tracking (for details panel) but block vehicle tracking
+                    if (object.type === 'train' || object.type === 'bus' || object.type === 'flight') {
+                        window.debugPanel.log('WARN', '🛡️ BLOCKED attempt to track vehicle', {
+                            type: object.type,
+                            id: object.id
+                        });
+                        return; // Block vehicle tracking
+                    }
+                }
+                // Allow clearing (null) or station tracking
+                return originalTrackObject(object);
+            };
+            window.debugPanel.log('INFO', '🛡️ Intercepted trackObject() - will block vehicle tracking');
+
             // CRITICAL: Intercept scrollZoom.disable() to catch WHO is disabling it
             if (underlyingMap.scrollZoom && underlyingMap.scrollZoom.disable) {
                 const originalDisable = underlyingMap.scrollZoom.disable.bind(underlyingMap.scrollZoom);
@@ -736,6 +777,22 @@ if (window.debugPanel) {
                 };
                 window.debugPanel.log('INFO', '🛡️ Intercepted scrollZoom.disable() - will block all disable attempts');
             }
+
+            // Also intercept ALL handler disable() calls for comprehensive protection
+            const handlers = ['boxZoom', 'dragRotate', 'dragPan', 'keyboard', 'doubleClickZoom', 'touchZoomRotate', 'touchPitch'];
+            handlers.forEach(handlerName => {
+                const handler = underlyingMap[handlerName];
+                if (handler && handler.disable) {
+                    const originalHandlerDisable = handler.disable.bind(handler);
+                    handler.disable = function() {
+                        window.debugPanel.log('WARN', `🛡️ BLOCKED ${handlerName}.disable() call`, {
+                            caller: new Error().stack.split('\n')[2]
+                        });
+                        // Don't actually disable - MT3D tries to disable all handlers during vehicle tracking
+                    };
+                }
+            });
+            window.debugPanel.log('INFO', '🛡️ Intercepted all map handler disable() methods');
 
             // Detect if event system gets destroyed
             const checkEventSystem = () => {
