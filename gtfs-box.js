@@ -718,12 +718,47 @@ if (window.debugPanel) {
                 hasCustomLayers: underlyingMap.style && underlyingMap.style._layers ? Object.keys(underlyingMap.style._layers).length : 0
             });
 
-            // Minimal diagnostic logging - observe without interfering
-            window.debugPanel.log('INFO', '🔍 Map ready - all interference removed');
+            // Diagnostic logging to understand scrollZoom state
+            window.debugPanel.log('INFO', '🔍 Map ready - diagnosing scrollZoom state');
 
-            // Monitor wheel events at window level to check if input is being blocked
+            // Check if scrollZoom is enabled
+            const scrollZoomEnabled = underlyingMap.scrollZoom.isEnabled();
+            window.debugPanel.log('INFO', '🔍 ScrollZoom initial state', {
+                enabled: scrollZoomEnabled,
+                active: underlyingMap.scrollZoom._active || false
+            });
+
+            // Log all handler states
+            const handlers = ['scrollZoom', 'boxZoom', 'dragRotate', 'dragPan', 'keyboard', 'doubleClickZoom', 'touchZoomRotate', 'touchPitch'];
+            const handlerStates = {};
+            handlers.forEach(handler => {
+                if (underlyingMap[handler]) {
+                    handlerStates[handler] = underlyingMap[handler].isEnabled();
+                }
+            });
+            window.debugPanel.log('INFO', '🎮 Handler states', handlerStates);
+
+            // Monitor wheel events at canvas level to see if they reach the map
             let wheelEventsSinceZoomstart = 0;
             let zoomStarted = false;
+            let canvasWheelCount = 0;
+
+            const canvas = underlyingMap.getCanvas();
+            canvas.addEventListener('wheel', (e) => {
+                if (!zoomStarted) {
+                    canvasWheelCount++;
+                    if (canvasWheelCount <= 3) {
+                        window.debugPanel.log('DEBUG', `🎯 Canvas wheel event (pre-zoom) #${canvasWheelCount}`, {
+                            deltaY: e.deltaY,
+                            defaultPrevented: e.defaultPrevented,
+                            scrollZoomEnabled: underlyingMap.scrollZoom.isEnabled(),
+                            scrollZoomActive: underlyingMap.scrollZoom._active
+                        });
+                    }
+                }
+            }, { passive: true, capture: true });
+
+            // Monitor wheel events at window level to check if input is being blocked
             window.addEventListener('wheel', (e) => {
                 if (zoomStarted) {
                     wheelEventsSinceZoomstart++;
@@ -731,7 +766,9 @@ if (window.debugPanel) {
                         window.debugPanel.log('DEBUG', `🌐 Window wheel event #${wheelEventsSinceZoomstart}`, {
                             deltaY: e.deltaY,
                             target: e.target.tagName,
-                            defaultPrevented: e.defaultPrevented
+                            defaultPrevented: e.defaultPrevented,
+                            scrollZoomEnabled: underlyingMap.scrollZoom.isEnabled(),
+                            scrollZoomActive: underlyingMap.scrollZoom._active
                         });
                     }
                 }
@@ -745,8 +782,19 @@ if (window.debugPanel) {
                     zoom: underlyingMap.getZoom().toFixed(2),
                     _zooming: underlyingMap._zooming,
                     _rotating: underlyingMap._rotating,
-                    scrollZoomActive: underlyingMap.scrollZoom?._active
+                    scrollZoomEnabled: underlyingMap.scrollZoom.isEnabled(),
+                    scrollZoomActive: underlyingMap.scrollZoom._active,
+                    originalEvent: e.originalEvent ? e.originalEvent.type : 'none'
                 });
+
+                // Log all handler states at zoom start
+                const handlerStates = {};
+                handlers.forEach(handler => {
+                    if (underlyingMap[handler]) {
+                        handlerStates[handler] = underlyingMap[handler].isEnabled();
+                    }
+                });
+                window.debugPanel.log('DEBUG', '🎮 Handler states at zoomstart', handlerStates);
             });
 
             underlyingMap.on('zoom', (e) => {
