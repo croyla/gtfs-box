@@ -840,6 +840,32 @@ if (window.debugPanel) {
                     error: e.error ? e.error.message : String(e)
                 });
             });
+
+            // Diagnostic: Check if trafficLayer exists and is working
+            setTimeout(() => {
+                if (window.debugPanel) {
+                    window.debugPanel.log('INFO', '🔍 Checking MT3D trafficLayer', {
+                        hasTrafficLayer: !!map.trafficLayer,
+                        trafficLayerType: map.trafficLayer ? map.trafficLayer.constructor.name : 'N/A',
+                        viewMode: map.viewMode,
+                        gtfsCount: map.gtfs ? map.gtfs.size : 0,
+                        mapLayers: underlyingMap.getStyle().layers.filter(l => l.id.includes('bus')).map(l => l.id)
+                    });
+
+                    // Check for active buses
+                    if (map.gtfs && map.gtfs.size > 0) {
+                        for (const [gtfsId, gtfs] of map.gtfs.entries()) {
+                            window.debugPanel.log('INFO', '🚌 GTFS Status', {
+                                gtfsId,
+                                activeBuses: gtfs.activeBusLookup ? gtfs.activeBusLookup.size : 0,
+                                realtimeBuses: gtfs.realtimeBuses ? gtfs.realtimeBuses.size : 0,
+                                routeCount: gtfs.routeLookup ? gtfs.routeLookup.size : 0,
+                                hasVehiclePositionUrl: !!gtfs.vehiclePositionUrl
+                            });
+                        }
+                    }
+                }
+            }, 5000); // Check 5 seconds after load
         }
     } catch (err) {
         window.debugPanel.log('WARN', 'Could not access underlying map instance', {
